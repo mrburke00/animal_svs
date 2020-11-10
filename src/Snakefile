@@ -20,14 +20,16 @@ if config['input']['sample_name'] == '' else config['input']['sample_name']
 
 rule all:
     input:
-        '../temp/sorted_reads/localTest.bam.bai'
+        '../temp/testLocal-indexcov/index.html',
+        os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'testLocal-smoove.genotyped.vcf.gz')
+        
 
 # indexing the reference must be done at all time
 rule bwa_index_reference: 
     input:
         config['input']['reference'] 
     output: 
-        os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))
+        os.path.join(config['run']['temp_dir'], config['input']['reference'])
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_index_reference.log')
     shell:
@@ -40,7 +42,7 @@ rule bwa_map:
         forward = config['input']['samples']['forward'],
         rev = config['input']['samples']['reverse']
     output:
-        os.path.join(config['run']['temp_dir'], os.path.join('mapped_reads', '{sample_name}.bam'))
+        os.path.join(config['run']['temp_dir'], 'mapped_reads', '{sample_name}.bam')
     params:
         rg = '@RG\\tID:{sample_name}\\tSM:{sample_name}\\tLB:lib1' 
     log:
@@ -58,7 +60,7 @@ rule samtools_sort:
     input:
         rules.bwa_map.output
     output:
-        os.path.join(config['run']['temp_dir'], os.path.join('sorted_reads', '{sample_name}.bam'))
+        os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam')
     params:
         samtools_temp = os.path.join('sorted_reads', sample_name)
     log:
@@ -70,6 +72,44 @@ rule samtools_index:
     input:
         rules.samtools_sort.output
     output:
-        os.path.join(config['run']['temp_dir'], os.path.join('sorted_reads', '{sample_name}.bam.bai'))
+        os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam.bai')
     shell:
         'samtools index {input}'
+
+rule goleft_indexcov:
+    input:
+        rules.bwa_map.output
+    output:
+        os.path.join(config['run']['temp_dir'], '{sample_name}-indexcov', 'index.html')
+    log:
+        os.path.join(config['run']['logs_dir'], '{sample_name}-indexcov.log')
+    shell:
+        'goleft indexcov -d {sample_name}-indexcov/ {input} 2> {log}'
+
+#----------              NOTE                    ----------#
+'''
+In the paper, they separate the two snakefiles and call a python script in 
+the middle the extract gap regions in the genome and convert to a BED file. 
+That script will be integrated here. This note is so that I don't forget
+'''
+
+rule extract_gap_regions:
+    input:
+        config['input']['reference'] 
+    output:
+        os.path.join(config['run']['temp_dir'], 'output_ranges.txt')
+    script:
+        './scripts/extractGapRegions.py'
+
+rule call:
+    input:
+        rules.samtools_sort.output
+    output:
+        os.path.join(config['run']['temp_dir'], 'smoove', 'results', '{sample_name}-smoove.genotyped.vcf.gz')
+    params:
+        ref = config['input']['reference']
+    conda:
+        'envs/smoove2.3.yaml'
+    shell:
+        'smoove call --outdir smoove/results/ --exclude {rules.extract_gap_regions.output}'
+        '-name {sample_name} --fasta {params.ref} -p 1 --genotype {input}'
