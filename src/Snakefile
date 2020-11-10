@@ -20,7 +20,7 @@ if config['input']['sample_name'] == '' else config['input']['sample_name']
 
 rule all:
     input:
-        '../temp/sorted_reads/localTest.bam'
+        '../temp/sorted_reads/localTest.bam.bai'
 
 # indexing the reference must be done at all time
 rule bwa_index_reference: 
@@ -42,7 +42,7 @@ rule bwa_map:
     output:
         os.path.join(config['run']['temp_dir'], os.path.join('mapped_reads', '{sample_name}.bam'))
     params:
-        rg='@RG\\tID:{sample_name}\\tSM:{sample_name}\\tLB:lib1' 
+        rg = '@RG\\tID:{sample_name}\\tSM:{sample_name}\\tLB:lib1' 
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_{sample_name}.log')
     threads:
@@ -59,7 +59,17 @@ rule samtools_sort:
         rules.bwa_map.output
     output:
         os.path.join(config['run']['temp_dir'], os.path.join('sorted_reads', '{sample_name}.bam'))
+    params:
+        samtools_temp = os.path.join('sorted_reads', sample_name)
     log:
         os.path.join(config['run']['logs_dir'], 'sort_{sample_name}.log')
     shell:
-        'samtools sort -T sorted_reads/{sample_name} -O bam {input} > {output} 2> {log}'
+        'samtools sort -T {params.samtools_temp} -O bam {input} > {output} 2> {log}'
+
+rule samtools_index:
+    input:
+        rules.samtools_sort.output
+    output:
+        os.path.join(config['run']['temp_dir'], os.path.join('sorted_reads', '{sample_name}.bam.bai'))
+    shell:
+        'samtools index {input}'
