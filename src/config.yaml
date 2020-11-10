@@ -1,0 +1,28 @@
+############### Parameters associated with the data ###############
+input:
+
+  # as of right now, we only support a single experiment
+  # with a forward and reverse component
+  samples:
+    forward: '../data/samples/sub1.fq'
+    reverse: '../data/samples/sub2.fq'
+
+  # reference genome database
+  reference: '../data/house-sparrow.fa'
+
+  # used to name output files. Not needed. If left blank, 
+  # defaults to the filename of the forward sequence
+  sample_name: 'localTest'
+
+############### Parameters associated with the run ###############
+run:
+  
+  # temporary file store. Files will be deleted
+  temp_dir: '../temp'
+
+  # output any issues/progress to this location
+  logs_dir: '../logs'
+
+  # for deployment either locally or to the cloud
+  type:
+    deployment: 'local'

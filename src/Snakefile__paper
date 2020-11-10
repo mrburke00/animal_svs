@@ -1,0 +1,163 @@
+'''
+Snakefile 
+
+Authors:
+Layer Lab
+
+Adapted from supplementary materials of:
+
+Bertolotti, Alicia C., et al. 'The structural variation landscape
+in 492 Atlantic salmon genomes.' bioRxiv (2020).
+'''
+
+#---------- Rule to run all other rules ----------#
+rule all:
+    input:
+        'smoove/results/genotyped/paste/cohort.smoove.square.anno.vcf.gz',
+        'indexcov/index.html'
+
+
+#---------- Snakefile 1 from the extra materials ----------#
+
+# indexing the reference must be done at all time
+rule bwa_index_reference: 
+    input:
+        '/users/r01acb15/sharedscratch/reference/ICSASG_v2.fa' 
+    output: 
+        '{tmp_dir}/ICSASG_v2.fa'
+    log:
+        '{log_dir}/bwa_index_reference.log' 
+    shell:
+        'bwa index {input} &> {log}' 
+        
+rule bwa_map:
+    input:
+        reference = '{tmp_dir}/ICSASG_v2.fa', 
+        forward = 'data/samples/{sample}_1.fastq',
+        reverse = 'data/samples/{sample}_2.fastq'
+    output:
+        '{tmp_dir}/mapped_reads/{sample}.bam'
+    params:
+        rg='@RG\\tID:{sample}\\tSM:{sample}\\tLB:lib1' 
+    log:
+        'bwa_{sample}.log'
+    threads:
+        16
+    shell:
+        '(bwa mem -R '{params.rg}' -t {threads} {input.reference}'
+        '{input.forward} {input.reverse} | '
+        'samtools view -Sb - '
+        '> {output}) '
+        '2> {log}'
+
+rule samtools_sort:
+    input:
+        '{tmp_dir}/mapped_reads/{sample}.bam'
+    output:
+        '{tmp_dir}/sorted_reads/{sample}.bam'
+    log:
+        'sort_{sample}.log'
+    shell:
+        'samtools sort -T sorted_reads/{wildcards.sample} -O bam {input}'
+        '> {output} 2> {log} '
+
+rule samtools_index:
+    input: 
+        '{tmp_dir}/sorted_reads/{sample}.bam' 
+    output: 
+        '{tmp_dir}/sorted_reads/{sample}.bam.bai'
+    shell:
+        'samtools index {input}'
+
+rule goleft_indexcov:
+    input:
+        bam=expand('{tmp_dir}/sorted_reads/{sample}.bam', sample=SAMPLES),
+        bai=expand('{tmp_dir}/sorted_reads/{sample}.bam.bai', sample=SAMPLES)
+    output:
+        '{tmp_dir}/indexcov/index.html'
+    log:
+        'indexcov.log'
+    shell:
+        'goleft indexcov -d indexcov/ {input.bam} 2> {log}'
+
+#----------              NOTE                    ----------#
+'''
+In the paper, they separate the two snakefiles and call a python script in 
+the middle the extract gap regions in the genome and convert to a BED file. 
+That script will be integrated here. This note is so that I don't forget
+'''
+
+rule extract_gap_regions:
+    input:
+        '/users/r01acb15/sharedscratch/reference/ICSASG_v2.fa'
+    output:
+        '{tmp_dir}/output_ranges.bed'
+    script:
+        './scripts/extractGapRegions.py'
+
+#---------- Snakefile 2 from the extra materials ----------#
+
+REF = '/users/r01acb15/sharedscratch/reference/ICSASG_v2.fa' 
+EXCLUDE = '{tmp_dir}/output_ranges.bed'
+GFF = '/users/r01acb15/sharedscratch/reference/Salmo_salar-annotation.gff3'
+
+rule call:
+    input:
+        bam='{tmp_dir}/sorted_reads/{sample}.bam'
+    output:
+        '{tmp_dir}/smoove/results/{sample}-smoove.genotyped.vcf.gz'
+    conda:
+        'envs/smoove2.3.yaml'
+    shell:
+        'smoove call --outdir smoove/results/ --exclude {EXCLUDE}'
+        '–name {wildcards.sample} --fasta {REF} -p 1 --genotype {input.bam}'
+
+rule merge:
+    input:
+        vcf=expand(
+            '{tmp_dir}/smoove/results/{sample}-smoove.genotyped.vcf.gz',
+            sample=SAMPLES
+        )
+    output:
+        '{tmp_dir}/smoove/results/merged.sites.vcf.gz'
+    conda:
+        'envs/smoove2.3.yaml'
+    shell:
+        'smoove merge --name merged -f {REF}'
+        '--outdir ./smoove/results/{input.vcf}'
+
+rule genotype:
+    input:
+        merge='{tmp_dir}/smoove/results/merged.sites.vcf.gz',
+        bam='{tmp_dir}/sorted_reads/{sample}.bam'
+    output:
+        '{tmp_dir}/smoove/results/genotyped/{sample}-joint-smoove.genotyped.vcf.gz'
+    conda:
+        'envs/smoove2.3.yaml'
+    shell:
+        'smoove genotype -d -x -p 1 --name {wildcards.sample}-joint '
+        '–outdir smoove/results/genotyped/ --fasta {REF}'
+        '--vcf {input.merge} {input.bam}'
+
+rule paste:
+    input: 
+        vcf=expand(
+            '{tmp_dir}/smoove/results/genotyped/{sample}-jointsmoove. genotyped.vcf.gz',
+            sample=SAMPLES
+        )
+    output:
+        '{tmp_dir}/smoove/results/genotyped/paste/cohort.vcf.gz'
+    conda:
+        'envs/smoove2.3.yaml'
+    shell:
+        'smoove paste --name cohort {input.vcf}'
+
+rule annotate:
+    input:  
+        '{tmp_dir}/smoove/results/genotyped/paste/cohort.vcf.gz'
+    output: 
+        'smoove/results/genotyped/paste/cohort.smoove.square.anno.vcf.gz' 
+    conda:
+        'envs/smoove2.3.yaml'
+    shell:
+        'smoove annotate --gff {GFF} {input} | bgzip -c > {output}'
