@@ -1,5 +1,6 @@
 channels:
-- bioconda
-- conda-forge - defaults
+  - defaults
+  - bioconda
+  - conda-forge 
 dependencies:
-- smoove
+  - smoove
