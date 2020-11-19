@@ -62,7 +62,7 @@ rule bwa_map:
         # does the operation: threads = min(threads, cores) so we can't go over
         threads = workflow.cores
     shell:
-        '(bwa mem -R {params.rg} -t {threads} {input.reference}'
+        '(bwa mem -R "{params.rg}" -t {threads} {input.reference}'
         ' {input.forward} {input.rev} | samtools view -Sb > {output})'
         ' 2> {log}'
 
