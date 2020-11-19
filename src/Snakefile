@@ -33,13 +33,15 @@ rule bwa_index_reference:
     output: 
         os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))
     params:
-        prefix = config['run']['temp_dir']
+        prefix = os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_index_reference.log')
     conda:
         'envs/bwa.yaml'
     shell:
-        'bwa index {input} -p {params.prefix} &> {log}' 
+        # create a symbolic link in the temp dir to the actual reference
+        'ln -s {input} {params.prefix} &'
+        'bwa index -p {params.prefix} {input} &> {log}' 
 
 rule bwa_map:
     input:
