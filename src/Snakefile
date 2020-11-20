@@ -22,7 +22,7 @@ if config['input']['sample_name'] == '' else config['input']['sample_name']
 
 rule all:
     input:
-        '../temp/testLocal-indexcov/index.html',
+        '../temp/localTest-indexcov/index.html',
         os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'genotyped', 'localTest-smoove.genotyped.vcf.gz')
         
 
@@ -74,7 +74,7 @@ rule samtools_sort:
     params:
         samtools_temp = os.path.join('sorted_reads', sample_name)
     log:
-        os.path.join(config['run']['logs_dir'], 'sort_{sample_name}.log')
+        os.path.join(config['run']['logs_dir'], 'samtools_sort_{sample_name}.log')
     conda:
         'envs/samtools.yaml'
     shell:
@@ -85,22 +85,27 @@ rule samtools_index:
         rules.samtools_sort.output
     output:
         os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam.bai')
+    log:
+        os.path.join(config['run']['logs_dir'], 'samtools_index_{sample_name}.log')
     conda:
         'envs/samtools.yaml'
     shell:
-        'samtools index {input}'
+        'echo {input} && samtools index {input}'
 
 rule goleft_indexcov:
     input:
-        rules.bwa_map.output
+        bam = rules.bwa_map.output,
+        # NOTE: keep the bai here. Although we don't use it, its necessary to force 
+        # snakemake to run samtools_index to get the bai file before we can run goleft
+        bai = rules.samtools_index.output
     output:
         os.path.join(config['run']['temp_dir'], '{sample_name}-indexcov', 'index.html')
     log:
-        os.path.join(config['run']['logs_dir'], '{sample_name}-indexcov.log')
+        os.path.join(config['run']['logs_dir'], 'goleft_indexcov_{sample_name}.log')
     conda:
         'envs/goleft.yaml'
     shell:
-        'goleft indexcov -d {sample_name}-indexcov/ {input} 2> {log}'
+        'goleft indexcov -d {sample_name}-indexcov/ {input.bam} 2> {log}'
 
 #----------              NOTE                    ----------#
 '''
@@ -114,6 +119,8 @@ rule extract_gap_regions:
         config['input']['reference'] 
     output:
         os.path.join(config['run']['temp_dir'], 'output_ranges.txt')
+    log:
+        os.path.join(config['run']['logs_dir'], 'extract_gap_regions.log')
     script:
         './scripts/extractGapRegions.py'
 
@@ -123,6 +130,8 @@ rule call:
     output:
         # 'called' was originaly 'genotyped', but snakemake didn't like the ambiguity
         os.path.join(config['run']['temp_dir'], 'smoove', 'results', '{sample_name}-smoove.called.vcf.gz')
+    log:
+         os.path.join(config['run']['logs_dir'], 'smoove_call_{sample_name}.log')
     params:
         ref = config['input']['reference']
     conda:
@@ -137,6 +146,8 @@ rule genotype:
         bam = rules.bwa_map.output
     output:
         os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'genotyped', '{sample_name}-smoove.genotyped.vcf.gz')
+    log:
+        os.path.join(config['run']['logs_dir'], 'smoove_genotype_{sample_name}.log')
     params:
         ref = config['input']['reference'],
         output_dir = os.path.join('smoove', 'results', 'genotyped')
