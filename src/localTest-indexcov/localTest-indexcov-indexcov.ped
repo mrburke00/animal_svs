@@ -1,0 +1,2 @@
+#family_id	sample_id	paternal_id	maternal_id	sex	phenotype	bins.out	bins.lo	bins.hi	bins.in	slope	p.out	mapped	unmapped
+unknown	localTest	-9	-9	-9	-9	54505	53314	806	6614	3.825	8.24	19305	187

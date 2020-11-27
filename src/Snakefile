@@ -56,7 +56,7 @@ rule bwa_map:
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_map_{sample_name}.log')
     conda:
-        'envs/bwa.yaml'
+        'envs/map.yaml'
     threads:
         # its ok if this is more threads than are available to us. Snakemake
         # does the operation: threads = min(threads, cores) so we can't go over
@@ -94,7 +94,7 @@ rule samtools_index:
 
 rule goleft_indexcov:
     input:
-        bam = rules.bwa_map.output,
+        bam = rules.samtools_sort.output,
         # NOTE: keep the bai here. Although we don't use it, its necessary to force 
         # snakemake to run samtools_index to get the bai file before we can run goleft
         bai = rules.samtools_index.output
@@ -135,7 +135,7 @@ rule call:
     params:
         ref = config['input']['reference']
     conda:
-        'envs/smoove2.3.yaml'
+        'envs/smoove.yaml'
     shell:
         'smoove call --outdir smoove/results/ --exclude {rules.extract_gap_regions.output}'
         ' -name {sample_name} --fasta {params.ref} -p 1 --genotype {input}'
@@ -152,7 +152,7 @@ rule genotype:
         ref = config['input']['reference'],
         output_dir = os.path.join('smoove', 'results', 'genotyped')
     conda:
-        'envs/smoove2.3.yaml'
+        'envs/smoove.yaml'
     shell: 
         'smoove genotype -d -x -p 1 --name {sample_name}-joint -outdir {params.output_dir}'
         ' --fasta {params.ref} --vcf {input.vcf} {input.bam}'

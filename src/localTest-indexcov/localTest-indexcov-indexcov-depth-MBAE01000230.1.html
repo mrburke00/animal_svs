@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.6.0/Chart.bundle.js"></script>
+		<script>
+		 null 
+		</script>
+    </head>
+    <body>
+	
+	
+	
+	<canvas id="canvas0" style="height:550px;width:850px"></canvas>
+		<hr>
+	
+	<a href="index.html">back to index</a>
+    </body>
+    <script>
+	Chart.defaults.line.cubicInterpolationMode = 'monotone';
+	Chart.defaults.global.animation.duration = 0;
+	var charts = []
+	
+		var ctx = document.getElementById("canvas0").getContext("2d");
+		var chart = new Chart(ctx, {"type":"line","label":"MBAE01000230.1","data":{"datasets":[{"backgroundColor":"rgba(250, 18, 249, 0.941)","borderColor":"rgba(250, 18, 249, 0.941)","borderWidth":0.4,"label":"localTest","fill":false,"steppedLine":true,"lineTension":0,"pointBorderWidth":0,"pointRadius":0,"pointHitRadius":6,"pointHoverRadius":0,"pointHoverBorderWidth":0,"xAxisID":"xaxis0","yAxisID":"yaxis0","data":[{"x":327680,"y":1.00},{"x":344064,"y":0.00},{"x":360448,"y":0.00},{"x":376832,"y":0.00},{"x":393216,"y":0.00},{"x":409600,"y":0.00},{"x":425984,"y":0.00},{"x":442368,"y":0.00},{"x":458752,"y":0.00},{"x":475136,"y":0.00},{"x":491520,"y":0.00},{"x":507904,"y":0.00},{"x":524288,"y":0.00},{"x":540672,"y":0.00},{"x":557056,"y":0.00},{"x":573440,"y":0.00},{"x":589824,"y":0.99}]}],"labels":null},"options":{"responsive":false,"scales":{"xAxes":[{"type":"linear","position":"bottom","id":"xaxis0","scaleLabel":{"display":true,"labelString":"position on MBAE01000230.1","fontSize":16}}],"yAxes":[{"type":"linear","position":"left","id":"yaxis0","scaleLabel":{"display":true,"labelString":"scaled coverage","fontSize":16},"ticks":{"max":2.5}}]},"tooltips":{"mode":"nearest"}}});
+		charts.push(chart)
+	
+	""
+    </script>
+</html>
