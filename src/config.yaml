@@ -23,6 +23,9 @@ run:
   # output any issues/progress to this location
   logs_dir: '../logs'
 
+  # directory to save final output files
+  output_dir: '../output/'
+
   # for deployment either locally or to the cloud
   type:
     deployment: 'local'

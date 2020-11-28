@@ -2,6 +2,7 @@ data/*
 logs/*
 tmp/*
 temp/*
+output/*
 .DS_Store
 .snakemake*
 *.pyc
