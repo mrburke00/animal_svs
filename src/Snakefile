@@ -43,6 +43,18 @@ rule bwa_index_reference:
         'ln -s {input} {params.prefix} &'
         'bwa index -p {params.prefix} {input} &> {log}' 
 
+rule samtools_faidx:
+    input:
+        config['input']['reference'] 
+    output: 
+        os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']) + '.fai')
+    log: 
+        os.path.join(config['run']['logs_dir'], 'samtools_faidx.log')
+    conda: 
+        'envs/samtools.yaml'
+    shell:
+        'samtools faidx {input} -o {output}'
+
 rule bwa_map:
     input:
         # "reverse" is a keyword internally to snakemake, so we have to shorten it to rev
@@ -72,7 +84,7 @@ rule samtools_sort:
     output:
         os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam')
     params:
-        samtools_temp = os.path.join('sorted_reads', sample_name)
+        samtools_temp = os.path.join(config['run']['temp_dir'], 'sorted_reads', sample_name)
     log:
         os.path.join(config['run']['logs_dir'], 'samtools_sort_{sample_name}.log')
     conda:
@@ -128,34 +140,38 @@ rule extract_gap_regions:
 
 rule call:
     input:
-        sorted = rules.samtools_sort.output, 
-        exclude = rules.extract_gap_regions.output	
+        bam = rules.samtools_sort.output,
+        bai = rules.samtools_index.output,
+        exclude = rules.extract_gap_regions.output, 
+        ref = rules.bwa_index_reference.output, 
+        ref_idxed = rules.samtools_faidx.output	
     output:
-        # 'called' was originaly 'genotyped', but snakemake didn't like the ambiguity
-        os.path.join(config['run']['temp_dir'], 'smoove', 'results', '{sample_name}-smoove.called.vcf.gz')
+        os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'called', '{sample_name}-smoove.genotyped.vcf.gz')
+    params:
+        output_dir = os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'called')
     log:
          os.path.join(config['run']['logs_dir'], 'smoove_call_{sample_name}.log')
-    params:
-        ref = config['input']['reference']
     conda:
         'envs/smoove.yaml'
     shell:
-        'smoove call --outdir smoove/results/ --exclude {input.exclude}'
-        ' -name {sample_name} --fasta {params.ref} -p 1 --genotype {input.sorted}'
+        'smoove call --outdir {params.output_dir} --exclude {input.exclude}'
+        ' -name {sample_name} --fasta {input.ref} -p 1 --genotype {input.bam}'
 
 rule genotype:
     input: 
         vcf = rules.call.output,
-        bam = rules.bwa_map.output
+        bam = rules.samtools_sort.output, 
+        bai = rules.samtools_index.output, 
+        ref = rules.bwa_index_reference.output, 
+        ref_idxed = rules.samtools_faidx.output
     output:
         os.path.join(config['run']['output_dir'], 'smoove', 'results', 'genotyped', '{sample_name}-smoove.genotyped.vcf.gz')
     log:
         os.path.join(config['run']['logs_dir'], 'smoove_genotype_{sample_name}.log')
     params:
-        ref = config['input']['reference'],
-        output_dir = os.path.join('smoove', 'results', 'genotyped')
+        output_dir = os.path.join(config['run']['output_dir'], 'smoove', 'results', 'genotyped')
     conda:
         'envs/smoove.yaml'
     shell: 
-        'smoove genotype -d -x -p 1 --name {sample_name}-joint -outdir {params.output_dir}'
-        ' --fasta {params.ref} --vcf {input.vcf} {input.bam}'
+        'smoove genotype -d -x -p 1 --name {sample_name} -outdir {params.output_dir}'
+        ' --fasta {input.ref} --vcf {input.vcf} {input.bam}'

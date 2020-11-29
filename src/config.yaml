@@ -4,8 +4,8 @@ input:
   # as of right now, we only support a single experiment
   # with a forward and reverse component
   samples:
-    forward: '../data/samples/sub1.fq'
-    reverse: '../data/samples/sub2.fq'
+    forward: '../data/samples/larger1.fq'
+    reverse: '../data/samples/larger2.fq'
 
   # reference genome database
   reference: '../data/house-sparrow.fa'

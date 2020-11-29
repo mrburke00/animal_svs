@@ -3,6 +3,7 @@ logs/*
 tmp/*
 temp/*
 output/*
+src/smoove/*
 .DS_Store
 .snakemake*
 *.pyc
