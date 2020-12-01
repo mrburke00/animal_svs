@@ -9,35 +9,45 @@ Adapted from supplementary materials of:
 Bertolotti, Alicia C., et al. 'The structural variation landscape
 in 492 Atlantic salmon genomes.' bioRxiv (2020).
 '''
+import os
 
-import utils
+# tell snakemake that the config file exits
+configfile: 'config.yaml'
 
 # extract the sample name. 
-sample_name = utils.get_sample_name()
+sample_name = os.path.basename(config['input']['forward']) \
+if config['input']['sample_name'] == '' else config['input']['sample_name']
+
+# often things are done s
 
 rule all:
     input:
-        utils.get_output_dir(['localtest-indexcov', 'index.html']), 
-        utils.get_output_dir(['smoove', 'results', 'genotyped', 'localTest-smoove.genotyped.vcf.gz'])        
+        '../output/localTest-indexcov/index.html',
+        os.path.join(config['run']['output_dir'], 'smoove', 'results', 'genotyped', 'localTest-smoove.genotyped.vcf.gz')
+        
 
 # indexing the reference must be done at all time
 rule bwa_index_reference: 
     input:
-        utils.get_file_from_config('reference')
+        config['input']['reference'] 
     output: 
-        os.path.join(config['run']['temp_dir'], os.path.basename(utils.get_file_from_config('reference')))
+        os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))
+    params:
+        prefix = os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_index_reference.log')
     conda:
-        'envs/bwa_idx_ref.yaml'
+        'envs/bwa.yaml'
     shell:
-        utils.move_ref_to_temp_cmd() + 'bwa index -p {output} {output} &> {log}' 
+        # create a symbolic link in the temp dir to the actual reference
+        'ln -s {input} {params.prefix} &'
+        'bwa index -p {params.prefix} {input} &> {log}' 
 
 rule samtools_faidx:
     input:
-        utils.get_file_from_config('reference')
+        config['input']['reference'] 
     output: 
-        os.path.join(config['run']['temp_dir'], os.path.basename(utils.get_file_from_config('reference')) + '.fai')
+        os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']) + '.fai')
     log: 
         os.path.join(config['run']['logs_dir'], 'samtools_faidx.log')
     conda: 
@@ -49,8 +59,8 @@ rule bwa_map:
     input:
         # "reverse" is a keyword internally to snakemake, so we have to shorten it to rev
         reference = rules.bwa_index_reference.output,
-        forward = to_gs(config['input']['samples']['forward']),
-        rev = to_gs(config['input']['samples']['reverse'])
+        forward = config['input']['samples']['forward'],
+        rev = config['input']['samples']['reverse']
     output:
         os.path.join(config['run']['temp_dir'], 'mapped_reads', '{sample_name}.bam')
     params:
@@ -101,9 +111,9 @@ rule goleft_indexcov:
         # snakemake to run samtools_index to get the bai file before we can run goleft
         bai = rules.samtools_index.output
     output:
-        utils.get_output_dir(['{sample_name}-indexcov', 'index.html'])
+        os.path.join(config['run']['output_dir'], '{sample_name}-indexcov', 'index.html')
     params:
-        output_dir = get_output_dir('{sample_name}-indexcov')
+        output_dir = os.path.join(config['run']['output_dir'], '{sample_name}-indexcov') + os.path.sep
     log:
         os.path.join(config['run']['logs_dir'], 'goleft_indexcov_{sample_name}.log')
     conda:
@@ -120,7 +130,7 @@ That script will be integrated here. This note is so that I don't forget
 
 rule extract_gap_regions:
     input:
-        utils.get_file_from_config('reference')
+        config['input']['reference'] 
     output:
         os.path.join(config['run']['temp_dir'], 'output_ranges.bed')
     log:
@@ -155,11 +165,11 @@ rule genotype:
         ref = rules.bwa_index_reference.output, 
         ref_idxed = rules.samtools_faidx.output
     output:
-        utils.get_output_dir(['smoove', 'results', 'genotyped', '{sample_name}-smoove.genotyped.vcf.gz'])
+        os.path.join(config['run']['output_dir'], 'smoove', 'results', 'genotyped', '{sample_name}-smoove.genotyped.vcf.gz')
     log:
         os.path.join(config['run']['logs_dir'], 'smoove_genotype_{sample_name}.log')
     params:
-        output_dir = uitls.get_output_dir(['smoove', 'results', 'genotyped'])
+        output_dir = os.path.join(config['run']['output_dir'], 'smoove', 'results', 'genotyped')
     conda:
         'envs/smoove.yaml'
     shell: 
