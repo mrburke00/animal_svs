@@ -108,7 +108,7 @@ def get_dir(directory: str, dir_append: list = []) -> str:
     if IS_GCP and 'output' in directory:
         return TO_GS(full_dir)
 
-    return output_dir
+    return full_dir
         
 
 def move_ref_to_temp_cmd() -> str:
@@ -124,7 +124,7 @@ def move_ref_to_temp_cmd() -> str:
         (str) the command to execute
     ''' 
     # get the reference file
-    ref_file = get_file_from_config('reference')
+    ref_file = get_file('reference')
 
     # get the path either for the symlink or where the copy will go
     moved_ref = os.path.join(str(config['run']['temp_dir']), os.path.basename(ref_file))
