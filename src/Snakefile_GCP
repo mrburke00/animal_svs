@@ -40,14 +40,14 @@ rule bwa_index_reference:
         os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))
     params:
         prefix = os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference'])),
-        cp_path = to_gs(os.path.join(config['run']['temp_dir'], config['input']['reference']))
+        cp_path = os.path.join(config['run']['temp_dir'], config['input']['reference'])
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_index_reference.log')
     conda:
         'envs/bwa_idx_ref.yaml'
     shell:
         # copy fa from main to temp for later
-        'gsutil cp gs://{input} gs://{params.cp_path} && '
+        'gsutil cp gs://{input} {params.cp_path} && '
         'bwa index -p {params.prefix} {input} &> {log}' 
 
 rule samtools_faidx:
