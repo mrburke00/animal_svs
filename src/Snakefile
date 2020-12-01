@@ -102,7 +102,7 @@ rule goleft_indexcov:
     output:
         utils.get_dir('output', ['{sample_name}-indexcov', 'index.html'])
     params:
-        output_dir = get_dir('output', ['{sample_name}-indexcov'])
+        output_dir = utils.get_dir('output', ['{sample_name}-indexcov'])
     log:
         utils.get_dir('logs', ['goleft_indexcov_{sample_name}.log'])
     conda:
