@@ -37,9 +37,9 @@ rule bwa_index_reference:
     input:
         to_gs(config['input']['reference'])
     output: 
-        to_gs(os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference'])))
+        os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))
     params:
-        prefix = to_gs(os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))),
+        prefix = os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference'])),
         cp_path = to_gs(os.path.join(config['run']['temp_dir'], config['input']['reference']))
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_index_reference.log')
@@ -48,13 +48,13 @@ rule bwa_index_reference:
     shell:
         # copy fa from main to temp for later
         'gsutil cp gs://{input} gs://{params.cp_path} && '
-        'bwa index -p {params.prefix} {params.cp_path} &> {log}' 
+        'bwa index -p {params.prefix} {input} &> {log}' 
 
 rule samtools_faidx:
     input:
         to_gs(config['input']['reference'])
     output: 
-        to_gs(os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']) + '.fai'))
+        os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']) + '.fai')
     log: 
         os.path.join(config['run']['logs_dir'], 'samtools_faidx.log')
     conda: 
@@ -69,7 +69,7 @@ rule bwa_map:
         forward = to_gs(config['input']['samples']['forward']),
         rev = to_gs(config['input']['samples']['reverse'])
     output:
-        to_gs(os.path.join(config['run']['temp_dir'], 'mapped_reads', '{sample_name}.bam'))
+        os.path.join(config['run']['temp_dir'], 'mapped_reads', '{sample_name}.bam')
     params:
         rg = '@RG\\tID:{sample_name}\\tSM:{sample_name}\\tLB:lib1' 
     log:
@@ -89,7 +89,7 @@ rule samtools_sort:
     input:
         rules.bwa_map.output
     output:
-        to_gs(os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam'))
+        os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam')
     params:
         samtools_temp = os.path.join(config['run']['temp_dir'], 'sorted_reads', sample_name)
     log:
@@ -103,7 +103,7 @@ rule samtools_index:
     input:
         rules.samtools_sort.output
     output:
-        to_gs(os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam.bai'))
+        os.path.join(config['run']['temp_dir'], 'sorted_reads', '{sample_name}.bam.bai')
     log:
         os.path.join(config['run']['logs_dir'], 'samtools_index_{sample_name}.log')
     conda:
@@ -139,7 +139,7 @@ rule extract_gap_regions:
     input:
         to_gs(config['input']['reference'])
     output:
-        to_gs(os.path.join(config['run']['temp_dir'], 'output_ranges.bed'))
+        os.path.join(config['run']['temp_dir'], 'output_ranges.bed')
     log:
         os.path.join(config['run']['logs_dir'], 'extract_gap_regions.log')
     script:
@@ -153,9 +153,9 @@ rule call:
         ref = rules.bwa_index_reference.output, 
         ref_idxed = rules.samtools_faidx.output	
     output:
-        to_gs(os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'called', '{sample_name}-smoove.genotyped.vcf.gz'))
+        os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'called', '{sample_name}-smoove.genotyped.vcf.gz')
     params:
-        output_dir = to_gs(os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'called'))
+        output_dir = os.path.join(config['run']['temp_dir'], 'smoove', 'results', 'called')
     log:
          os.path.join(config['run']['logs_dir'], 'smoove_call_{sample_name}.log')
     conda:

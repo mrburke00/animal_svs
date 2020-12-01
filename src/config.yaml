@@ -18,7 +18,7 @@ input:
 run:
   
   # temporary file store. Files will be deleted
-  temp_dir: 'temp'
+  temp_dir: '../temp'
 
   # output any issues/progress to this location
   logs_dir: '../logs'
