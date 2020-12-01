@@ -14,7 +14,7 @@ from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
 
 # setup the connection to google cloud storage
 # NOTE: we are assuming all files are then in the same bucket
-GS = GSRemoteProvider('dcsc-fall-2020')
+GS = GSRemoteProvider()
 
 # helper function to make all files GS files
 to_gs = lambda f: GS.remote(config['run']['deployment']['bucket_name'] + '/' + f)
@@ -40,15 +40,15 @@ rule bwa_index_reference:
         to_gs(os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference'])))
     params:
         prefix = to_gs(os.path.join(config['run']['temp_dir'], os.path.basename(config['input']['reference']))),
-        cp_dir = to_gs(os.path.join(config['run']['temp_dir']))
+        cp_path = to_gs(os.path.join(config['run']['temp_dir'], config['input']['reference']))
     log:
         os.path.join(config['run']['logs_dir'], 'bwa_index_reference.log')
     conda:
-        'envs/bwa.yaml'
+        'envs/bwa_idx_ref.yaml'
     shell:
         # copy fa from main to temp for later
-        'gsutil cp gs://{input} gs://{params.cp_dir} '
-        'bwa index -p {params.prefix} {input} &> {log}' 
+        'gsutil cp gs://{input} gs://{params.cp_path} && '
+        'bwa index -p {params.prefix} {params.cp_path} &> {log}' 
 
 rule samtools_faidx:
     input:
