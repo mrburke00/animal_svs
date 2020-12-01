@@ -8,3 +8,11 @@ conda config --add channels bioconda
 # snakemake installation --------------------------------------------------------------------------
 conda install -c conda-forge mamba
 mamba create -c conda-forge -c bioconda -n snakemake snakemake
+
+# install the github repo and change into the src directory ---------------------------------------
+git clone https://github.com/mchowdh200/animal_svs.git
+cd animal_svs/src/
+
+# activate snakemake ------------------------------------------------------------------------------
+conda activate
+conda activate snakemake
