@@ -4,6 +4,8 @@ tmp/*
 temp/*
 output/*
 src/smoove/*
+src/vc_pipeline_bucket*
 .DS_Store
 .snakemake*
 *.pyc
+

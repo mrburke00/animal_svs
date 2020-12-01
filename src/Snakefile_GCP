@@ -48,7 +48,7 @@ rule bwa_index_reference:
     shell:
         # copy fa from main to temp for later
         'gsutil cp gs://{input} {params.cp_path} && '
-        'bwa index -p {params.prefix} {input} &> {log}' 
+        'bwa index -p {params.prefix} {params.cp_path} &> {log}' 
 
 rule samtools_faidx:
     input:
