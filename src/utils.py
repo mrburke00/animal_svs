@@ -1,6 +1,5 @@
 import os
 import yaml
-import gsutils
 
 from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
 
@@ -37,7 +36,7 @@ def get_sample_name() -> str:
     return str(config['input']['sample_name'])
 
 
-def get_file_from_config(f: str) -> str:
+def get_file(f: str) -> str:
     '''
     Get the specified file from the config for the deployment type. 
     Files available are {'reference', 'forward', 'reverse'}
@@ -54,7 +53,7 @@ def get_file_from_config(f: str) -> str:
     f = f.lower()
 
     if f not in allowed_files:
-        return ''
+        raise FileNotFoundError(f'Could not find file {f} in config.')
 
     # separate logic for GCP 
     if IS_GCP:
@@ -72,22 +71,42 @@ def get_file_from_config(f: str) -> str:
         return str(config['input']['samples'][f])
 
 
-def get_output_dir(output_append: list = []) -> str:
+def get_dir(directory: str, dir_append: list = []) -> str:
     '''
-    Get the output directory for the deployment type
+    Get the directory for the deployment type
 
     Inputs:
-        output_append:  (list) strings to add as substructure to the output directory. 
+        directory:  (str) the directory to get {'temp', 'logs', 'output'}
+        dir_append: (list) strings to add as substructure to the directory. 
                                 Input is a list of strings s.t. os.path.join() can be called. Default=[]
     Outputs:
         (str) the directory for the deployment type
     '''
 
-    # join it all first
-    output_dir = os.path.join(str(config['run']['output_dir']), *output_append)
+    # the directories allowed
+    allowed_dirs = {'temp', 'logs', 'output'}
+
+    directory = directory.lower()
+
+    if directory not in allowed_dirs:
+        raise NameError(f'Directory of type {directory} not supported.')
+
+    # get the actual name
+    if directory == 'temp':
+        directory = 'temp_dir'
     
-    if IS_GCP:
-        return TO_GS(output_dir)
+    elif directory == 'logs':
+        directory = 'logs_dir'
+
+    else:
+        directory = 'output_dir'
+
+    # join the full path
+    full_dir = os.path.join(str(config['run'][directory]), *dir_append)
+    
+    # as of right now, we only support output directories in GCP
+    if IS_GCP and 'output' in directory:
+        return TO_GS(full_dir)
 
     return output_dir
         
