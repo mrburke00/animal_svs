@@ -130,7 +130,6 @@ def move_ref_to_temp_cmd() -> str:
     moved_ref = os.path.join(str(config['run']['temp_dir']), os.path.basename(ref_file))
 
     if IS_GCP:
-        moved_ref += '.fa'
         return f'gsutil cp gs://{ref_file} {moved_ref} && '
 
     return f'ln -s {ref_file} {moved_ref} && '
