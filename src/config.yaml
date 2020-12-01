@@ -4,11 +4,11 @@ input:
   # as of right now, we only support a single experiment
   # with a forward and reverse component
   samples:
-    forward: '../data/samples/larger1.fq'
-    reverse: '../data/samples/larger2.fq'
+    forward: 'larger1.fq'
+    reverse: 'larger2.fq'
 
   # reference genome database
-  reference: '../data/house-sparrow.fa'
+  reference: 'house-sparrow.fa'
 
   # used to name output files. Not needed. If left blank, 
   # defaults to the filename of the forward sequence
@@ -18,14 +18,26 @@ input:
 run:
   
   # temporary file store. Files will be deleted
-  temp_dir: '../temp'
+  temp_dir: 'temp'
 
   # output any issues/progress to this location
   logs_dir: '../logs'
 
   # directory to save final output files
-  output_dir: '../output/'
+  output_dir: 'output'
 
   # for deployment either locally or to the cloud
-  type:
-    deployment: 'local'
+  deployment:
+    
+    # supported types: 'cloud', 'local'
+    type: 'cloud'
+
+    # Service is ONLY used if deployment is set to 'cloud'
+    # current supported services are: 'gcp'
+    service: 'gcp'
+
+    # if deployment is cloud, we assume that files are stored in the cloud
+    # therefore we need the bucket name. As of right now, we only support
+    # storage that is the same as the deployment. So if deployment is 'gcp', 
+    # data must be stored in a gcp bucket. do NOT add the gs:// or s3:// prefix
+    bucket_name: 'vc_pipeline_bucket'
