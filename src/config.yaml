@@ -4,15 +4,15 @@ input:
   # as of right now, we only support a single experiment
   # with a forward and reverse component
   samples:
-    forward: 'larger1.fq'
-    reverse: 'larger2.fq'
+    forward: '/home/zamc8857/animal_svs/data/samples/larger1.fq'
+    reverse: '/home/zamc8857/animal_svs/data/samples/larger2.fq'
 
   # reference genome database
-  reference: 'house-sparrow.fa'
+  reference: '/home/zamc8857/animal_svs/data/house-sparrow.fa'
 
   # used to name output files. Not needed. If left blank, 
   # defaults to the filename of the forward sequence
-  sample_name: 'cloud-test'
+  sample_name: 'cloud-test-local'
 
 ############### Parameters associated with the run ###############
 run:
@@ -24,13 +24,13 @@ run:
   logs_dir: '../logs'
 
   # directory to save final output files
-  output_dir: 'output'
+  output_dir: '/home/zamc8857/animal_svs/data/output'
 
   # for deployment either locally or to the cloud
   deployment:
     
     # supported types: 'cloud', 'local'
-    type: 'cloud'
+    type: 'local'
 
     # Service is ONLY used if deployment is set to 'cloud'
     # current supported services are: 'gcp'
