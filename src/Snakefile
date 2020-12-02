@@ -16,8 +16,8 @@ sample_name = utils.get_sample_name()
 
 rule all:
     input:
-        utils.get_dir('output', ['localtest-indexcov', 'index.html']), 
-        utils.get_dir('output', ['smoove', 'results', 'genotyped', 'localTest-smoove.genotyped.vcf.gz'])        
+        utils.get_dir('output', [f'{sample_name}-indexcov', 'index.html']), 
+        utils.get_dir('output', ['smoove', 'results', 'genotyped', f'{sample_name}-smoove.genotyped.vcf.gz'])        
 
 # indexing the reference must be done at all time
 rule bwa_index_reference: 
@@ -73,7 +73,7 @@ rule samtools_sort:
     output:
         utils.get_dir('temp', ['sorted_reads', '{sample_name}.bam'])
     params:
-        samtools_temp = utils.get_dir('temp', ['sorted_reads', sample_name])
+        samtools_temp = utils.get_dir('temp', ['sorted_reads', sample_name]) 
     log:
         utils.get_dir('logs', ['samtools_sort_{sample_name}.log'])
     conda:

@@ -12,7 +12,7 @@ input:
 
   # used to name output files. Not needed. If left blank, 
   # defaults to the filename of the forward sequence
-  sample_name: 'localTest'
+  sample_name: 'cloud-test'
 
 ############### Parameters associated with the run ###############
 run:
