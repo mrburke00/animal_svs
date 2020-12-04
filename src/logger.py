@@ -1,9 +1,17 @@
-#!/usr/bin/env python3
-import sys
-from subprocess import Popen, PIPE, STDOUT
+import time
+import subprocess
+import select
+import os
 
-with Popen("command", stdout=PIPE, stderr=STDOUT, bufsize=1) as p, \
-     open('logfile', 'ab') as file:
-    for line in p.stdout: # b'\n'-separated lines
-        sys.stdout.buffer.write(line) # pass bytes as is
-        file.write(line)
+default_log_file = os.path.join(os.path.expanduser('~'), 'logs.log')
+
+f = subprocess.Popen(['tail', '-F', default_log_file],\
+        stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        
+p = select.poll()
+p.register(f.stdout)
+
+while True:
+    if p.poll(1):
+        print f.stdout.readline()
+    time.sleep(1)
