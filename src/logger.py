@@ -11,8 +11,10 @@ import sys
 
 from google.cloud import pubsub_v1
 
-# google cloud log topic
+# Google cloud pubsub variables
 topic_name = 'logs'
+sub_name = 'logs-consumer'
+
 
 class Logger:
     '''Logs the output to the correct source based on the config'''
@@ -31,6 +33,10 @@ class Logger:
         self.IS_CLOUD = str(self.config['run']['deployment']['type']).lower() == 'cloud'
         self.IS_GCP = self.IS_CLOUD and str(self.config['run']['deployment']['service']).lower() == 'gcp'
 
+        # extract the project name if IS_GCP
+        if self.IS_GCP:
+            self.project_name = str(self.config['run']['deployment']['project_name'])
+
         if role == 'publisher':
             self.publish_func = self.__init_publisher()
 
@@ -48,13 +54,12 @@ class Logger:
             print('Setting up connection to google pubsub...')
 
             #---------------- PubSub code -------------------#
-            project_name = str(self.config['run']['deployment']['project_name'])
 
             # ability to publish to google pub sub for logs
             publisher = pubsub_v1.PublisherClient()
 
             # check to see if the topic exists so that we dont try and recreate it
-            project_path = f'projects/{project_name}'
+            project_path = f'projects/{self.project_name}'
             topic_exists = False
 
             for topic in publisher.list_topics(request={'project': project_path}):
@@ -64,7 +69,7 @@ class Logger:
                     topic_exists = True
                     break
 
-            topic_path = publisher.topic_path(project_name, topic_name)
+            topic_path = publisher.topic_path(self.project_name, topic_name)
 
             # if topic doesnt exist, create it
             if not topic_exists:
@@ -94,13 +99,11 @@ class Logger:
 
             print('Setting up connection to google pubsub...')
 
-            project_name = str(self.config['run']['deployment']['project_name'])
-
             # check to see if the topic exists
             topic_exists = False
 
-            publisher = pubsub.PublisherClient()
-            project_path = f'projects/{project_name}'
+            publisher = pubsub_v1.PublisherClient()
+            project_path = f'projects/{self.project_name}'
 
             for topic in publisher.list_topics(request={'project': project_path}):
                 this_topic_id = str(topic.name).split('/')[-1]
@@ -115,39 +118,35 @@ class Logger:
                 raise NameError(f'Topic {topic_name} not found')
 
             # setup the subscriber
-            subscriber = pubsub.SubscriberClient()
-            topic_path = subscriber.topic_path(project_name, topic_name)
-            subscription_path = subscriber.subscription_path(project_name, sub_name)
+            subscriber = pubsub_v1.SubscriberClient()
+            topic_path = subscriber.topic_path(self.project_name, topic_name)
+            subscription_path = subscriber.subscription_path(self.project_name, sub_name)
 
             subsription = None
 
             self.subscriber = subscriber
 
-            # Wrap the subscriber in a 'with' block to automatically call close() to
-            # close the underlying gRPC channel when done.
-            with subscriber:
+            # check to see if the subscription exists
+            sub_exists = False
 
-                # check to see if the subscription exists
-                sub_exists = False
+            for sub in subscriber.list_subscriptions(request={"project": project_path}):
+                this_sub_id = str(sub.name).split('/')[-1]
 
-                for sub in subscriber.list_subscriptions(request={"project": project_path}):
-                    this_sub_id = str(sub.name).split('/')[-1]
+                if this_sub_id == sub_name:
+                    sub_exists = True
+                    break
 
-                    if this_sub_id == sub_name:
-                        sub_exists = True
-                        break
+            # if the sub does not exist, create it
+            if not sub_exists:
+                subscription = subscriber.create_subscription(
+                    request={"name": subscription_path, "topic": topic_path}
+                )
 
-                # if the sub does not exist, create it
-                if not sub_exists:
-                    subscription = subscriber.create_subscription(
-                        request={"name": subscription_path, "topic": topic_path}
-                    )
-
-                # get it otherwise
-                else:
-                    subscription = subscriber.get_subscription(
-                        request={"subscription": subscription_path}
-                    )
+            # get it otherwise
+            else:
+                subscription = subscriber.get_subscription(
+                    request={"subscription": subscription_path}
+                )
 
             print('Done')
 
@@ -163,19 +162,23 @@ class Logger:
         Start consuming log messages
         '''
         if self.IS_GCP:
-            subscription_path = self.subscriber.subscription_path(project_name, sub_name)
+            subscription_path = self.subscriber.subscription_path(self.project_name, sub_name)
 
-            # callback is just to print data to console.
-            def callback(message):
-                print(message.data.decode('utf-8'))
-                message.ack()
+            # Wrap the subscriber in a 'with' block to automatically call close() to
+            # close the underlying gRPC channel when done.
+            with self.subscriber:
 
-            # now wait
-            future = self.subscriber.subscribe(subscription_path, callback)
+                # callback is just to print data to console.
+                def callback(message):
+                    print(message.data.decode('utf-8'))
+                    message.ack()
 
-            print('Waiting for log messages from pipeline...')
+                # now wait
+                future = self.subscriber.subscribe(subscription_path, callback)
 
-            try:
-                future.result()
-            except KeyboardInterrupt:
-                future.cancel()
+                print('Waiting for log messages from pipeline...')
+
+                try:
+                    future.result()
+                except KeyboardInterrupt:
+                    future.cancel()
