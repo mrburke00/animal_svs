@@ -49,6 +49,7 @@ def follow(thefile):
         yield line
 
 # open and follow logs
+print('Opened logs file and following new lines...')
 f = open(default_log_file)
 lines = follow(f)
 
