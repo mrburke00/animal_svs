@@ -5,8 +5,13 @@
 import time
 import os
 import yaml
+import selectors
+import subprocess
+import sys
 
 from google.cloud import pubsub_v1
+
+#---------------- PubSub code -------------------#
 
 # google cloud log topic
 topic_name = 'logs'
@@ -38,27 +43,27 @@ topic_path = publisher.topic_path(project_name, topic_name)
 if not topic_exists:
     topic = publisher.create_topic(request={"name": topic_path})
 
-# equivalent of 'tail -F <thefile>'
-def follow(thefile):
-    thefile.seek(0,2)
-    while True:
-        line = thefile.readline()
-        if not line:
-            time.sleep(0.1)
-            continue
-        yield line
+#---------------- Start Snakemake and read from stdout and stderr ----------------------#
+p = subprocess.Popen(
+    ['snakemake', '--cores', '4', '--use-conda', '-F'], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+)
 
-# open and follow logs
-print('Opened logs file and following new lines...')
-f = open(default_log_file)
-lines = follow(f)
+sel = selectors.DefaultSelector()
+sel.register(p.stdout, selectors.EVENT_READ)
+sel.register(p.stderr, selectors.EVENT_READ)
 
-for i in lines:
+while True:
+    for key, _ in sel.select():
+        data = key.fileobj.read1().decode()
+        if not data:
+            exit()
 
-    # if its an empty line, skip
-    if not len(str(i).strip()):
-        continue
+        msg = ''
+        if key.fileobj is p.stdout:
+            msg = str(data)
+        else:
+            msg = str(data)
 
-    # publish to logs and print
-    publisher.publish(topic_path, i.encode('utf-8'))
-    print(i)
+        # publish to logs and print
+        publisher.publish(topic_path, msg.encode('utf-8'))
+        print(msg)
