@@ -1,4 +1,5 @@
 import time
+import os
 
 default_log_file = os.path.join(os.path.expanduser('~'), 'logs.log')
 
