@@ -20,11 +20,9 @@ default_log_file = os.path.join('logs.log')
 
 # ability to publish to google pub sub for logs
 publisher = pubsub_v1.PublisherClient()
-topic_name = 'projects/{project_id}/topics/{topic}'.format(
-    project_id=project_name,
-    topic=topic_name,
-)
-publisher.create_topic(topic_name)
+
+topic_path = publisher.topic_path(project_name, topic_name)
+topic = publisher.create_topic(request={"name": topic_path})
 
 def follow(thefile):
     thefile.seek(0,2)

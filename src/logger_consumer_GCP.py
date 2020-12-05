@@ -22,7 +22,8 @@ subscription_name = 'projects/{project_id}/subscriptions/{sub}'.format(
     sub=sub_name,  # Set this to something appropriate.
 )
 subscriber.create_subscription(
-    name=subscription_name, topic=topic_name)
+    name=subscription_name, topic=topic_name
+)
 
 def callback(message):
     print(message.data)
