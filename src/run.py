@@ -7,6 +7,9 @@ import multiprocessing as mp
 
 from google.cloud import pubsub_v1
 
+# message sent to logs when pipeline is finished
+pipeline_complete_msg = 'Pipeline run complete'
+
 # load config
 config = yaml.safe_load(open('config.yaml'))
 
@@ -26,10 +29,18 @@ sel.register(p.stdout, selectors.EVENT_READ)
 sel.register(p.stderr, selectors.EVENT_READ)
 
 while True:
+
+    is_done = False
+
+    # check to see if the process is done
+    # p.poll() is None evaulating to true means its still running
+    if not p.poll() is None:
+        is_done = True
+
     for key, _ in sel.select():
         data = key.fileobj.read1().decode()
         if not data:
-            exit()
+            is_done = True
 
         msg = ''
         if key.fileobj is p.stdout:
@@ -39,3 +50,7 @@ while True:
 
         # log the output
         logger.log(msg)
+
+    if is_done:
+        logger.log(pipeline_complete_msg)
+        break 
