@@ -30,6 +30,9 @@ class Logger:
         publish_func = None
 
         if self.IS_GCP:
+
+            print('Setting up connection to google pubsub...')
+
             #---------------- PubSub code -------------------#
             project_name = str(self.config['run']['deployment']['project_name'])
 
@@ -53,8 +56,13 @@ class Logger:
             if not topic_exists:
                 topic = publisher.create_topic(request={"name": topic_path})
 
+            def publish(msg: str):
+                publisher.publish(topic_path, msg.encode('utf-8'))
+                print(msg)
+            
+            publish_func = publish
 
-            publish_func = lambda msg: print(msg) and publisher.publish(topic_path, msg.encode('utf-8'))
+            print('Done.')
 
         else:
             publish_func = lambda msg: print(msg)
