@@ -21,9 +21,24 @@ default_log_file = os.path.join('logs.log')
 # ability to publish to google pub sub for logs
 publisher = pubsub_v1.PublisherClient()
 
-topic_path = publisher.topic_path(project_name, topic_name)
-topic = publisher.create_topic(request={"name": topic_path})
+# check to see if the topic exists so that we dont try and recreate it
+project_path = f'projects/{project_name}'
+topic_exists = False
 
+for topic in publisher.list_topics(request={'project': project_path}):
+    this_topic_id = str(topic.name).split('/')[-1]
+
+    if this_topic_id == topic_name:
+        topic_exists = True
+        break
+
+topic_path = publisher.topic_path(project_name, topic_name)
+
+# if topic doesnt exist, create it
+if not topic_exists:
+    topic = publisher.create_topic(request={"name": topic_path})
+
+# equivalent of 'tail -F <thefile>'
 def follow(thefile):
     thefile.seek(0,2)
     while True:
@@ -44,5 +59,5 @@ for i in lines:
         continue
 
     # publish to logs and print
-    publisher.publish(topic_name, i)
+    publisher.publish(topic_path, i.encode('utf-8'))
     print(i)
