@@ -6,9 +6,12 @@ input:
   samples:
     forward: '/home/zamc8857/animal_svs/data/samples/larger1.fq'
     reverse: '/home/zamc8857/animal_svs/data/samples/larger2.fq'
+    # forward: 'larger1.fq'
+    # reverse: 'larger2.fq'
 
   # reference genome database
   reference: '/home/zamc8857/animal_svs/data/house-sparrow.fa'
+  # reference: 'house-sparrow.fa'
 
   # used to name output files. Not needed. If left blank,
   # defaults to the filename of the forward sequence
@@ -30,7 +33,7 @@ run:
   deployment:
 
     # supported types: 'cloud', 'local'
-    type: 'local'
+    type: 'cloud'
 
     # number of cores to use. If left at 0, max cores are used
     cores: 0
