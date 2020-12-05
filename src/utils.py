@@ -4,7 +4,7 @@ import yaml
 from snakemake.remote.GS import RemoteProvider as GSRemoteProvider
 
 # load the config
-config = yaml.safe_load(open('./config.yaml'))
+config = yaml.safe_load(open('config.yaml'))
 
 # some high level variables to avoid re-indexing the yaml
 IS_CLOUD = str(config['run']['deployment']['type']).lower() == 'cloud'
@@ -13,7 +13,7 @@ IS_GCP = str(config['run']['deployment']['service']).lower() == 'gcp' and IS_CLO
 BUCKET_NAME = str(config['run']['deployment']['bucket_name'])
 
 # setup GS incase we use cloud storage
-GS = None 
+GS = None
 TO_GS = None
 
 if IS_GCP:
@@ -38,7 +38,7 @@ def get_sample_name() -> str:
 
 def get_file(f: str) -> str:
     '''
-    Get the specified file from the config for the deployment type. 
+    Get the specified file from the config for the deployment type.
     Files available are {'reference', 'forward', 'reverse'}
 
     Inputs:
@@ -55,9 +55,9 @@ def get_file(f: str) -> str:
     if f not in allowed_files:
         raise FileNotFoundError(f'Could not find file {f} in config.')
 
-    # separate logic for GCP 
+    # separate logic for GCP
     if IS_GCP:
-        
+
         if f == 'reference':
             return TO_GS(str(config['input'][f]))
 
@@ -77,7 +77,7 @@ def get_dir(directory: str, dir_append: list = []) -> str:
 
     Inputs:
         directory:  (str) the directory to get {'temp', 'logs', 'output'}
-        dir_append: (list) strings to add as substructure to the directory. 
+        dir_append: (list) strings to add as substructure to the directory.
                                 Input is a list of strings s.t. os.path.join() can be called. Default=[]
     Outputs:
         (str) the directory for the deployment type
@@ -94,7 +94,7 @@ def get_dir(directory: str, dir_append: list = []) -> str:
     # get the actual name
     if directory == 'temp':
         directory = 'temp_dir'
-    
+
     elif directory == 'logs':
         directory = 'logs_dir'
 
@@ -103,26 +103,26 @@ def get_dir(directory: str, dir_append: list = []) -> str:
 
     # join the full path
     full_dir = os.path.join(str(config['run'][directory]), *dir_append)
-    
+
     # as of right now, we only support output directories in GCP
     if IS_GCP and 'output' in directory:
         return TO_GS(full_dir)
 
     return full_dir
-        
+
 
 def move_ref_to_temp_cmd() -> str:
     '''
-    Some steps in the pipeline require that the .fa and .fai be in the same directory. 
+    Some steps in the pipeline require that the .fa and .fai be in the same directory.
     Due to this, we must either copy the .fa to the temp directory or add a symlink.
-    This depends on the deployment type (GCP does not allow for symlinks), so 
-    the command will be generated here. 
+    This depends on the deployment type (GCP does not allow for symlinks), so
+    the command will be generated here.
 
     Inputs:
         None
     Outputs:
         (str) the command to execute
-    ''' 
+    '''
     # get the reference file
     ref_file = get_file('reference')
 
@@ -133,5 +133,3 @@ def move_ref_to_temp_cmd() -> str:
         return f'gsutil cp gs://{ref_file} {moved_ref} && '
 
     return f'ln -s {ref_file} {moved_ref} && '
-
-    
