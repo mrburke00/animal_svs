@@ -76,6 +76,9 @@ class Logger:
                 topic = publisher.create_topic(request={"name": topic_path})
 
             def publish(msg: str):
+                if not len(msg.strip()):
+                    return
+                    
                 publisher.publish(topic_path, msg.encode('utf-8'))
                 print(msg)
 
