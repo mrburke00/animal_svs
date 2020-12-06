@@ -4,18 +4,18 @@ input:
   # as of right now, we only support a single experiment
   # with a forward and reverse component
   samples:
-    forward: '/home/zamc8857/animal_svs/data/samples/larger1.fq'
-    reverse: '/home/zamc8857/animal_svs/data/samples/larger2.fq'
-    # forward: 'larger1.fq'
-    # reverse: 'larger2.fq'
+    # forward: '/home/zamc8857/animal_svs/data/samples/larger1.fq'
+    # reverse: '/home/zamc8857/animal_svs/data/samples/larger2.fq'
+    forward: 'larger1.fq'
+    reverse: 'larger2.fq'
 
   # reference genome database
-  reference: '/home/zamc8857/animal_svs/data/house-sparrow.fa'
-  # reference: 'house-sparrow.fa'
+  # reference: '/home/zamc8857/animal_svs/data/house-sparrow.fa'
+  reference: 'house-sparrow.fa'
 
   # used to name output files. Not needed. If left blank,
   # defaults to the filename of the forward sequence
-  sample_name: 'cloud-test-local'
+  sample_name: 'cloud-test-deployment'
 
 ############### Parameters associated with the run ###############
 run:
@@ -27,7 +27,7 @@ run:
   logs_dir: '../logs'
 
   # directory to save final output files
-  output_dir: '/home/zamc8857/animal_svs/data/output'
+  output_dir: 'output'
 
   # for deployment either locally or to the cloud
   deployment:
@@ -58,7 +58,7 @@ run:
     # and at least the size of all files for the hard drive.
     gcp_instance:
         machine_type: 'e2-standard-4'
-        disk_space: '20' # in GB
+        disk_space: '40' # in GB
         ram_size: '16' # in GB
 
         # documentation for region and zone found here

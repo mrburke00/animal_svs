@@ -161,9 +161,15 @@ class Logger:
         '''
         self.publish_func(msg)
 
-    def consume(self):
+    def consume(self, callback: callable = None, keyboard_interrupt: callable = None):
         '''
         Start consuming log messages
+
+        Inputs:
+            callback:   (callable) function to do when a message is recieved.
+                                    If none is provided, printing is all that will happen
+            keyboard_interrupt:     (callable) function to run when KeyboardInterrupt detected
+                                                If none, then logger will only stop consuming
         '''
         if self.IS_GCP:
             subscription_path = self.subscriber.subscription_path(self.project_name, sub_name)
@@ -173,9 +179,11 @@ class Logger:
             with self.subscriber:
 
                 # callback is just to print data to console.
-                def callback(message):
+                def cb(message):
                     print(message.data.decode('utf-8'))
                     message.ack()
+
+                callback = cb if callback is None else callback
 
                 # now wait
                 future = self.subscriber.subscribe(subscription_path, callback)
@@ -186,3 +194,6 @@ class Logger:
                     future.result()
                 except KeyboardInterrupt:
                     future.cancel()
+
+                    if keyboard_interrupt is not None:
+                        keyboard_interrupt()

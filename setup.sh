@@ -38,18 +38,18 @@ input:
   # as of right now, we only support a single experiment
   # with a forward and reverse component
   samples:
-    forward: '/home/zamc8857/animal_svs/data/samples/larger1.fq'
-    reverse: '/home/zamc8857/animal_svs/data/samples/larger2.fq'
-    # forward: 'larger1.fq'
-    # reverse: 'larger2.fq'
+    # forward: '/home/zamc8857/animal_svs/data/samples/larger1.fq'
+    # reverse: '/home/zamc8857/animal_svs/data/samples/larger2.fq'
+    forward: 'larger1.fq'
+    reverse: 'larger2.fq'
 
   # reference genome database
-  reference: '/home/zamc8857/animal_svs/data/house-sparrow.fa'
-  # reference: 'house-sparrow.fa'
+  # reference: '/home/zamc8857/animal_svs/data/house-sparrow.fa'
+  reference: 'house-sparrow.fa'
 
   # used to name output files. Not needed. If left blank,
   # defaults to the filename of the forward sequence
-  sample_name: 'cloud-test-local'
+  sample_name: 'cloud-test-deployment'
 
 ############### Parameters associated with the run ###############
 run:
@@ -61,7 +61,7 @@ run:
   logs_dir: '../logs'
 
   # directory to save final output files
-  output_dir: '/home/zamc8857/animal_svs/data/output'
+  output_dir: 'output'
 
   # for deployment either locally or to the cloud
   deployment:
@@ -99,6 +99,6 @@ run:
         # https://cloud.google.com/compute/docs/regions-zones
         region: 'us-central1'
         zone: 'us-central1-a'
-" > $HOME/animal_svs/rc/config.yaml
+" > $HOME/animal_svs/src/config.yaml
 cd $HOME/animal_svs/src
 python run.py

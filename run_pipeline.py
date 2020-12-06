@@ -10,6 +10,9 @@ config = yaml.safe_load(open('src/config.yaml'))
 IS_CLOUD = str(config['run']['deployment']['type']).lower() == 'cloud'
 IS_GCP = IS_CLOUD and str(config['run']['deployment']['service']).lower() == 'gcp'
 
+# pipeline done message from remote
+pipeline_complete_msg = 'Pipeline run complete'
+
 # some trickery as GCP
 if IS_GCP:
 
@@ -29,7 +32,7 @@ if IS_GCP:
             config_yaml += line
 
     # now append config to startup
-    startup += f'echo "{config_yaml}" > $HOME/animal_svs/rc/config.yaml'
+    startup += f'echo "{config_yaml}" > $HOME/animal_svs/src/config.yaml'
 
     # now add change into src and run run.py
     startup += '\ncd $HOME/animal_svs/src\npython run.py'
@@ -38,16 +41,30 @@ if IS_GCP:
     with open('setup.sh', 'w') as o:
         o.write(startup)
 
+
     # then we launch an instance
     gcp_setup_instance.setup()
 
+    # define the callback for GCP
+    def cb(message):
+        print(message.data.decode('utf-8'))
+        message.ack()
+
+        # if the message is the end message, kill the remote
+        if pipeline_complete_msg in message.data.decode('utf-8'):
+            gcp_setup_instance.teardown()
+
+    # define the function to run on keyboard interrupt inside the logger
+    def ki():
+        print('\nKeyboardInterrupt. Killing remote process')
+        print('DO NOT PERFORM ANOTHER KEYBOARD INTERRUPT')
+        print('If you do, you may need to manually delete the VM instance from your GCP Compute Engine')
+        print('Beginning teardown...')
+        gcp_setup_instance.teardown()
+
     # start up the logger
     l = logger.Logger('consumer')
-    l.consume()
-
-    # now we need to wait for the pipeline to end the shut it down
-    # TODO: wait
-    # gcp_setup_instance.teardown()
+    l.consume(callback=cb, keyboard_interrupt=ki)
 
 # otherwise just run run.py
 else:

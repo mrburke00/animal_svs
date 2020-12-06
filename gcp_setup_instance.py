@@ -91,6 +91,12 @@ def create_instance(compute, project, zone, name):
         zone=zone,
         body=config).execute()
 
+def delete_instance(compute, project, zone, name):
+    return compute.instances().delete(
+        project=project,
+        zone=zone,
+        instance=name).execute()
+
 
 def wait_for_operation(compute, project, zone, operation):
     print('Waiting for operation to finish...')
