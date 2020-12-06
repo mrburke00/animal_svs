@@ -8,4 +8,4 @@ src/vc_pipeline_bucket*
 .DS_Store
 .snakemake*
 *.pyc
-
+setup.sh

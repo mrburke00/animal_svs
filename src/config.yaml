@@ -50,3 +50,18 @@ run:
 
     # the project name. Right now, only supported for GCP project
     project_name: 'dcsc-fall-2020'
+
+    # instance machine type
+    # documentation for Google Cloud Compute Enginer machine types can be seen here
+    # https://cloud.google.com/compute/docs/machine-types
+    # NOTE: for extra large files, its advised to get at least 16 GB ram if not more
+    # and at least the size of all files for the hard drive.
+    gcp_instance:
+        machine_type: 'e2-standard-4'
+        disk_space: '20' # in GB
+        ram_size: '16' # in GB
+
+        # documentation for region and zone found here
+        # https://cloud.google.com/compute/docs/regions-zones
+        region: 'us-central1'
+        zone: 'us-central1-a'

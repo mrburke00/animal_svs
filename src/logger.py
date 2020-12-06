@@ -15,6 +15,7 @@ from google.cloud import pubsub_v1
 topic_name = 'logs'
 sub_name = 'logs-consumer'
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 class Logger:
     '''Logs the output to the correct source based on the config'''
@@ -28,7 +29,7 @@ class Logger:
         '''
         role = 'publisher' if 'consumer' not in role else 'consumer'
 
-        self.config = yaml.safe_load(open('config.yaml'))
+        self.config = yaml.safe_load(open(os.path.join(dir_path, 'config.yaml')))
 
         self.IS_CLOUD = str(self.config['run']['deployment']['type']).lower() == 'cloud'
         self.IS_GCP = self.IS_CLOUD and str(self.config['run']['deployment']['service']).lower() == 'gcp'
@@ -78,7 +79,7 @@ class Logger:
             def publish(msg: str):
                 if not len(msg.strip()):
                     return
-                    
+
                 publisher.publish(topic_path, msg.encode('utf-8'))
                 print(msg)
 
