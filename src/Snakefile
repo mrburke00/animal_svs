@@ -129,6 +129,10 @@ rule extract_gap_regions:
 
 rule call:
     input:
+        # NOTE: keep bai and ref_idxed here. Although its not needed
+        # in the shell string, these are assumed to be in the same directory
+        # as the bam and fa files. Keeping these inputs forces the previous
+        # rules to run
         bam = rules.samtools_sort.output,
         bai = rules.samtools_index.output,
         exclude = rules.extract_gap_regions.output, 
@@ -148,6 +152,8 @@ rule call:
 
 rule genotype:
     input: 
+        # NOTE: see the comment under rule "call" for why these other inputs
+        # are necessary
         vcf = rules.call.output,
         bam = rules.samtools_sort.output, 
         bai = rules.samtools_index.output, 
