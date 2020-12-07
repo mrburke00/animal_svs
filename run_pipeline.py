@@ -1,6 +1,7 @@
 import yaml
 import subprocess
 import gcp_setup_instance
+import sys
 
 from src import logger
 
@@ -53,6 +54,9 @@ if IS_GCP:
         # if the message is the end message, kill the remote
         if pipeline_complete_msg in message.data.decode('utf-8'):
             gcp_setup_instance.teardown()
+            print('Exiting...')
+            sys.exit(0)
+        
 
     # define the function to run on keyboard interrupt inside the logger
     def ki():
@@ -61,6 +65,8 @@ if IS_GCP:
         print('If you do, you may need to manually delete the VM instance from your GCP Compute Engine')
         print('Beginning teardown...')
         gcp_setup_instance.teardown()
+        print('Exiting...')
+        sys.exit(1)
 
     # start up the logger
     l = logger.Logger('consumer')
