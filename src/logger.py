@@ -1,6 +1,6 @@
 # credit to
 # https://stackoverflow.com/questions/34953512/replicating-tail-f-with-python
-# for logging info
+# for some of the ideas in the following code
 
 import time
 import os
@@ -48,6 +48,7 @@ class Logger:
         '''
         Create a publisher function that publishes based on the config
         '''
+
         publish_func = None
 
         if self.IS_GCP:
@@ -95,7 +96,8 @@ class Logger:
 
     def __init_consumer(self) -> None:
         '''
-        Initialize consumer. Only used for remote logging
+        Initialize consumer. Only used for remote logging (like a GCP VM 
+        instance)
         '''
 
         # if gcp, we need to subscribe
@@ -158,7 +160,13 @@ class Logger:
     def log(self, msg: str) -> None:
         '''
         Log a message
+
+        Inputs:
+            msg:    string. The message to log
+        Outputs: 
+            None
         '''
+
         self.publish_func(msg)
 
     def consume(self, callback: callable = None, keyboard_interrupt: callable = None):
@@ -171,6 +179,7 @@ class Logger:
             keyboard_interrupt:     (callable) function to run when KeyboardInterrupt detected
                                                 If none, then logger will only stop consuming
         '''
+
         if self.IS_GCP:
             subscription_path = self.subscriber.subscription_path(self.project_name, sub_name)
 

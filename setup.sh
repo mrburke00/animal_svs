@@ -92,7 +92,7 @@ run:
     # and at least the size of all files for the hard drive.
     gcp_instance:
         machine_type: 'e2-standard-4'
-        disk_space: '20' # in GB
+        disk_space: '40' # in GB
         ram_size: '16' # in GB
 
         # documentation for region and zone found here

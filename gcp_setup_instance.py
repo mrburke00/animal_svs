@@ -5,6 +5,8 @@ import time
 import googleapiclient.discovery
 import google.auth
 
+# get the google credentials. This should already be setup from the 
+# 'gcloud auth login' command. See the README for more details
 credentials, project = google.auth.default()
 service = googleapiclient.discovery.build('compute', 'v1', credentials=credentials)
 
@@ -27,6 +29,22 @@ vm_project = 'ubuntu-os-cloud'
 
 
 def create_instance(compute, project, zone, name):
+    '''Create a compute instance in GCP in a project in a zone with the 
+    given name. 
+
+    Inputs:
+        compute:    the compute instance to setup. This is a google dict like 
+                    object used for REST API calls. See the link for more. 
+                    https://googleapis.github.io/google-api-python-client/docs/epy/googleapiclient.discovery-module.html#build
+        project:    string. The name of the project
+        zone:       string. The zone where the compute is to be setup 
+        name:       string. The name to give the compute instance
+
+    Returns: 
+        Response body (dictionary). Information on the compute instance setup. 
+        See the link for more info. 
+        https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
+    '''
     global compute_instance_type, vm_project, vm_family
 
     # Get the ubuntu image
@@ -92,6 +110,21 @@ def create_instance(compute, project, zone, name):
         body=config).execute()
 
 def delete_instance(compute, project, zone, name):
+    '''Delete the comput instance specified
+
+    Inputs:
+        compute:    the compute instance to setup. This is a google dict like 
+                    object used for REST API calls. See the link for more. 
+                    https://googleapis.github.io/google-api-python-client/docs/epy/googleapiclient.discovery-module.html#build
+        project:    string. The name of the project
+        zone:       string. The zone where the compute is to be setup 
+        name:       string. The name to give the compute instance
+
+    Returns: 
+        Response body (dictionary). Information on the compute instance setup. 
+        See the link for more info. 
+        https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
+    '''
     return compute.instances().delete(
         project=project,
         zone=zone,
@@ -99,6 +132,23 @@ def delete_instance(compute, project, zone, name):
 
 
 def wait_for_operation(compute, project, zone, operation):
+    '''Block until the operation (specified by the response body of a request)
+    is finished. Raises an exception if it fails (specified by a google response)
+
+    Inputs:
+        compute:    the compute instance to setup. This is a google dict like 
+                    object used for REST API calls. See the link for more. 
+                    https://googleapis.github.io/google-api-python-client/docs/epy/googleapiclient.discovery-module.html#build
+        project:    string. The name of the project
+        zone:       string. The zone where the compute is to be setup 
+        operation:  dict-like. the repsonse body from some operation (like a 
+                    setup or teardown or insert)
+
+    Returns: 
+        Response body (dictionary). Information on the compute instance setup. 
+        See the link for more info. 
+        https://cloud.google.com/compute/docs/reference/rest/v1/instances/insert
+    '''
     print('Waiting for operation to finish...')
     while True:
         result = compute.zoneOperations().get(
@@ -116,6 +166,20 @@ def wait_for_operation(compute, project, zone, operation):
 
 
 def setup(project=project_name, zone=zone, instance_name='vc-pipeline'):
+    '''Create a GCP compute instance and block until the operation is complete. 
+    
+    Inputs:
+        project_name:   string. The name of the GCP project. Default is pulled 
+                        from the config.yaml file
+        zone:           string. The zone where the GCP compute instance is to 
+                        be created. Default is from the config.yaml file
+        instance_name:  string. The name to give the compute VM instance. 
+                        Default is 'vc-pipeline'
+
+    Returns: 
+        None
+    '''
+
     compute = googleapiclient.discovery.build('compute', 'v1')
 
     #---------------- Set up the instance -----------------------#
@@ -129,6 +193,20 @@ def setup(project=project_name, zone=zone, instance_name='vc-pipeline'):
 
 
 def teardown(project=project_name, zone=zone, instance_name='vc-pipeline'):
+    '''Delete a GCP compute instance and block until the operation is complete
+
+    Inputs:
+        project_name:   string. The name of the GCP project. Default is pulled 
+                        from the config.yaml file
+        zone:           string. The zone where the GCP compute instance is to 
+                        be created. Default is from the config.yaml file
+        instance_name:  string. The name to give the compute VM instance. 
+                        Default is 'vc-pipeline'
+
+    Returns: 
+        None
+    '''
+
     compute = googleapiclient.discovery.build('compute', 'v1')
 
     print('Deleting instance...')
