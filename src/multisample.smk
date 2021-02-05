@@ -24,7 +24,7 @@ rule all:
     input:
         # TODO test with hardcoded values
         # "{Config.workdir}/merged/{project_name}-sites.vcf.gz"
-        /mnt/local/data/merged/test-sites.vcf.gz
+        '/mnt/local/data/merged/test-sites.vcf.gz'
 
 
 ### TODO Rule for getting bam paths from local or S3
