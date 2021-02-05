@@ -4,31 +4,27 @@ as the starting point.  Will incorporate fastq alignment rule later.
 """
 import os
 # TODO add snakemake and boto install to setup script
-from snakemake.remote.S3 import RemoteProvider as S3
+import config_utils
+from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 
 
-### TODO hardcode s3 bucket for testing purposes.
-# Later retreive from config.
-### TODO don't require remote files
-# s3_bucket = 's3://layerlabcu/cow/bams/'
 
-### TODO get from config or from command line arg
-# outdir = '/mnt/local/data'
-# if not os.path.isdir(outdir): os.mkdir(outdir)
-
-### TODO get "project_name" from config or command line arg
-# project_name = "test"
-
-configfile: "config.yaml"
-
+################################################################################
+## Setup
+################################################################################
+# configfile: "config.yaml"
+# conf = config_utils.Config(config)
+workdir: "/mnt/local/data"
+S3 = S3RemoteProvider()
 
 ################################################################################
 ## Rules
 ################################################################################
 rule all:
     input:
-        "{outdir}/merged/{project_name}-sites.vcf.gz"
-
+        # TODO test with hardcoded values
+        # "{Config.workdir}/merged/{project_name}-sites.vcf.gz"
+        /mnt/local/data/merged/test-sites.vcf.gz
 
 
 ### TODO Rule for getting bam paths from local or S3
@@ -38,21 +34,16 @@ rule all:
         # s3_bucket: string -- bucket uri where the data is found
         # input_dir: string -- only used if s3 == False
 
+# TODO Test with hard coded buckets
+samples = S3.glob_wildcards("s3://layerlabcu/cow/bams/{sample}.bam")
 rule get_data:
-    """
-    Conditional Rule:
-      * gets the sample names from file names in data_dir/s3_bucket
-      * if the data is in fastq format, then we expect the files to be
-          {sample1}-1.fastq, {sample1}-2.fastq
-          ...
-          {sampleN}-1.fastq, {sampleN}-2.fastq
-      * if the data is in BAM/CRAM format, then we expect the files to be
-          {sample1}.{bam|cram}, {sample1}.{bai|crai}
-          ...
-          {sampleN}.{bam|cram}, {sampleN}.{bai|crai}
-    """
     input:
-        if
+        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam"), sample=samples),
+        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam.bai"), sample=samples)
+    output:
+        "{sample}/{sample}.bam"
+        "{sample}/{sample}.bam.bai"
+           
     
 
 
