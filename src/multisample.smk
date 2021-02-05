@@ -38,8 +38,8 @@ rule all:
 samples = S3.glob_wildcards("s3://layerlabcu/cow/bams/{sample}.bam")
 rule get_data:
     input:
-        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam"), sample=samples),
-        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam.bai"), sample=samples)
+        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam"), sample=samples.sample),
+        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam.bai"), sample=samples.sample)
     output:
         "{sample}/{sample}.bam"
         "{sample}/{sample}.bam.bai"
