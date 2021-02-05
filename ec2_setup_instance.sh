@@ -44,3 +44,12 @@ echo "PATH=$PATH:/mnt/local/bin" >> ~/.profile
 wget https://github.com/brentp/gargs/releases/download/v0.3.9/gargs_linux -O /mnt/local/bin/gargs
 chmod +x /mnt/local/bin/gargs
 
+# conda setup -------------------------------------------------------------------------------------
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
+bash ~/miniconda.sh -b -p $HOME/miniconda
+eval "$($HOME/miniconda/bin/conda shell.bash hook)"
+conda init
+conda config --add channels bioconda
+
+# setup snakemake ----------------------------------------------------------------------------------
+conda create -c bioconda -y -n snakemake snakemake boto3
