@@ -26,7 +26,7 @@ botoS3 = boto3.resource('s3')
 my_bucket = botoS3.Bucket(bucket_name)
 objs = my_bucket.objects.filter(Prefix=prefix, Delimiter='/')
 bam_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.bam')]
-samples = [x.strip(s3_bucket).rstrip('.bam') for x in bam_list]
+samples = [x.lstrip(s3_bucket).rstrip('.bam') for x in bam_list]
 ################################################################################
 ## Rules
 ################################################################################
@@ -46,13 +46,25 @@ rule all:
 
 rule get_data:
     input:
-        bam = S3.remote("layerlabcu/cow/bams/{sample}.bam", sample=samples),
-        # TODO try to handle .bam.bai and .bai indices
-        bai = S3.remote("layerlabcu/cow/bams/{sample}.bai")
+        bam = "layerlabcu/cow/bams/{sample}.bam", sample=samples,
+        # TODO handle case of .bam.bai/.bai
+        bai = "layerlabcu/cow/bams/{sample}.bai", sample=samples
     output:
-        "{sample}/{sample}.txt",
+        # TODO handle case of .bam.bai/.bai
+        bam = temp("{sample}/{sample}.bam"),
+        bai = temp("{sample}/{sample}.bai")
     shell:
-        "samtools view -H {input.bam} > {output}"
+        "aws s3 cp s3://{s3_bucket}{sample}.bam {output.bam}",
+        "aws s3 cp s3://{s3_bucket}{sample}.bam {output.bai}"
+
+rule test_get_data:
+    input:
+        "{sample}/{sample}.bam"
+        "{sample}/{sample}.bam.bai"
+    output:
+        "{sample}/header.txt"
+    shell:
+        "samtools view -H {sample.bam} > {output}"
     
 
 

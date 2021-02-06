@@ -52,4 +52,4 @@ conda init
 conda config --add channels bioconda
 
 # setup snakemake ----------------------------------------------------------------------------------
-conda create -c bioconda -y -n snakemake snakemake boto3
+conda create -c bioconda -y -n snakemake snakemake boto3 boto
