@@ -4,7 +4,8 @@ as the starting point.  Will incorporate fastq alignment rule later.
 """
 import os
 # TODO add snakemake and boto install to setup script
-import config_utils
+# import config_utils
+import boto3
 from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 
 
@@ -14,7 +15,9 @@ from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 ################################################################################
 # configfile: "config.yaml"
 # conf = config_utils.Config(config)
-workdir: "/mnt/local/data"
+workdir: "test"
+
+# TODO
 S3 = S3RemoteProvider()
 
 ################################################################################
@@ -24,7 +27,7 @@ rule all:
     input:
         # TODO test with hardcoded values
         # "{Config.workdir}/merged/{project_name}-sites.vcf.gz"
-        '/mnt/local/data/merged/test-sites.vcf.gz'
+        '{workdir}/merged/test-sites.vcf.gz'
 
 
 ### TODO Rule for getting bam paths from local or S3
@@ -34,12 +37,19 @@ rule all:
         # s3_bucket: string -- bucket uri where the data is found
         # input_dir: string -- only used if s3 == False
 
-# TODO Test with hard coded buckets
-samples = S3.glob_wildcards("s3://layerlabcu/cow/bams/{sample}.bam")
+# TODO Test with hard coded buckets -------------------------------------------
+s3_bucket = 'layerlabcu/cow/bams/'
+bucket_name, prefix = s3_bucket.split('/', 1)
+botoS3 = boto3.resource('s3')
+my_bucket = botoS3.Bucket(bucket_name)
+objs = my_bucket.objects.filter(Prefix=prefix, Delimiter='/')
+bam_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.bam')]
+samples = [x.strip(s3_bucket).rstrip('.bam') for x in bam_list]
+# ------------------------------------------------------------------------------
 rule get_data:
     input:
-        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam"), sample=samples.sample),
-        S3.remote(expand("s3://layerlabcu/cow/bams/{sample}.bam.bai"), sample=samples.sample)
+        S3.remote(expand("layerlabcu/cow/bams/{sample}.bam"), sample=samples),
+        S3.remote(expand("layerlabcu/cow/bams/{sample}.bam.bai"), sample=samples)
     output:
         "{sample}/{sample}.bam"
         "{sample}/{sample}.bam.bai"
@@ -50,10 +60,6 @@ rule get_data:
 ### TODO After Bam rules are done
 # make conditional rule that gets fastqs or bam/cram
     # using glob_wildcards() check if the 
-
-        
-
-
 
 ### TODO Rule(s) for getting high coverage regions with mosdepth
     # 1. Run mosdepth to get genome wide coverage
