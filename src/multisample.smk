@@ -15,27 +15,9 @@ from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 ################################################################################
 # configfile: "config.yaml"
 # conf = config_utils.Config(config)
-workdir: "test"
+workdir: "/mnt/local/test"
 
-# TODO
 S3 = S3RemoteProvider()
-
-################################################################################
-## Rules
-################################################################################
-rule all:
-    input:
-        # TODO test with hardcoded values
-        # "{Config.workdir}/merged/{project_name}-sites.vcf.gz"
-        '{workdir}/merged/test-sites.vcf.gz'
-
-
-### TODO Rule for getting bam paths from local or S3
-    # conditional input to either use a local directory for bams or S3
-    # controlled by config file params
-        # s3: bool
-        # s3_bucket: string -- bucket uri where the data is found
-        # input_dir: string -- only used if s3 == False
 
 # TODO Test with hard coded buckets -------------------------------------------
 s3_bucket = 'layerlabcu/cow/bams/'
@@ -45,15 +27,32 @@ my_bucket = botoS3.Bucket(bucket_name)
 objs = my_bucket.objects.filter(Prefix=prefix, Delimiter='/')
 bam_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.bam')]
 samples = [x.strip(s3_bucket).rstrip('.bam') for x in bam_list]
-# ------------------------------------------------------------------------------
+################################################################################
+## Rules
+################################################################################
+rule all:
+    input:
+        # TODO test with hardcoded values
+        # "merged/{project_name}-sites.vcf.gz"
+        expand("{sample}/{sample}.txt", sample=samples),
+
+
+### TODO Rule for getting bam paths from local or S3
+    # conditional input to either use a local directory for bams or S3
+    # controlled by config file params
+        # s3: bool
+        # s3_bucket: string -- bucket uri where the data is found
+        # input_dir: string -- only used if s3 == False
+
 rule get_data:
     input:
-        S3.remote(expand("layerlabcu/cow/bams/{sample}.bam"), sample=samples),
-        S3.remote(expand("layerlabcu/cow/bams/{sample}.bam.bai"), sample=samples)
+        bam = S3.remote("layerlabcu/cow/bams/{sample}.bam", sample=samples),
+        # TODO try to handle .bam.bai and .bai indices
+        bai = S3.remote("layerlabcu/cow/bams/{sample}.bai")
     output:
-        "{sample}/{sample}.bam"
-        "{sample}/{sample}.bam.bai"
-           
+        "{sample}/{sample}.txt",
+    shell:
+        "samtools view -H {input.bam} > {output}"
     
 
 
