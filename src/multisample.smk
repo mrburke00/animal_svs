@@ -9,13 +9,13 @@ import boto3
 from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 
 
-
 ################################################################################
 ## Setup
 ################################################################################
 # configfile: "config.yaml"
 # conf = config_utils.Config(config)
-workdir: "/mnt/local/test"
+# workdir: "/mnt/local/test"
+outdir = "/mnt/local/test"
 
 S3 = S3RemoteProvider()
 
@@ -34,7 +34,7 @@ rule all:
     input:
         # TODO test with hardcoded values
         # "merged/{project_name}-sites.vcf.gz"
-        expand("{sample}/{sample}.txt", sample=samples),
+        expand(outdir+"/{sample}/{sample}.txt", sample=samples),
 
 
 ### TODO Rule for getting bam paths from local or S3
@@ -45,26 +45,26 @@ rule all:
         # input_dir: string -- only used if s3 == False
 
 rule get_data:
-    input:
-        bam = "layerlabcu/cow/bams/{sample}.bam", sample=samples,
-        # TODO handle case of .bam.bai/.bai
-        bai = "layerlabcu/cow/bams/{sample}.bai", sample=samples
     output:
         # TODO handle case of .bam.bai/.bai
-        bam = temp("{sample}/{sample}.bam"),
-        bai = temp("{sample}/{sample}.bai")
+        bam = temp(outdir+"/{sample}/{sample}.bam"),
+        bai = temp(outdir+"/{sample}/{sample}.bai")
+    log:
+        outdir+"/{sample}/log/get_data.log"
     shell:
-        "aws s3 cp s3://{s3_bucket}{sample}.bam {output.bam}",
-        "aws s3 cp s3://{s3_bucket}{sample}.bam {output.bai}"
+        """aws s3 cp s3://{s3_bucket}{wildcards.sample}.bam {output.bam} --no-progress 2> {log}
+        aws s3 cp s3://{s3_bucket}{wildcards.sample}.bai {output.bai} --no-progress 2>> {log}"""
 
 rule test_get_data:
     input:
-        "{sample}/{sample}.bam"
-        "{sample}/{sample}.bam.bai"
+        bam = outdir+"/{sample}/{sample}.bam",
+        bai = outdir+"/{sample}/{sample}.bai"
     output:
-        "{sample}/header.txt"
+        outdir+"/{sample}/{sample}.txt"
+    conda:
+        "envs/samtools.yaml"
     shell:
-        "samtools view -H {sample.bam} > {output}"
+        "samtools view -H {input.bam} > {output}"
     
 
 
