@@ -15,7 +15,7 @@ from snakemake.remote.S3 import RemoteProvider as S3RemoteProvider
 ################################################################################
 # configfile: "config.yaml"
 # conf = config_utils.Config(config)
-ref_dir = "/mnt/local/test/ref"
+refdir = "/mnt/local/test/ref"
 outdir = "/mnt/local/test"
 
 S3 = S3RemoteProvider()
@@ -71,8 +71,8 @@ rule test_get_data:
 
 rule get_reference:
     output:
-        fasta = temp(ref_dir+'/ref.fa')
-        index = temp(ref_dir+'/ref.fa.fai')
+        fasta = temp(refdir+'/ref.fa')
+        index = temp(refdir+'/ref.fa.fai')
     log:
         outdir+"/log/get_reference.log"
     shell:
@@ -127,6 +127,28 @@ rule exclude_regions:
 
 ### TODO call/genotype SVs with smoove
     # use smoove call -g -d
+rule smoove_call:
+    input:
+        bam = outdir+"/{sample}.bam"
+        fasta = "{get_reference.output.fasta}"
+        exclude = outdir+"/{sample}/{sample}.exclude.bed"
+    params:
+        output_dir = outdir+"/{sample}"
+    output:
+        outdir+"/{sample}/{sample}-smoove.genotyped.vcf.gz"
+    conda:
+        "envs/smoove.yaml"
+    shell:
+        """
+        smoove call --genotype \
+                    --duphold \
+                    --removepr \
+                    --fasta {input.fasta} \
+                    --exclude {input.exclude} \
+                    --name {wildcards.sample} \
+                    --outdir {params.output_dir} \
+                    {input.bam}
+        """
 
 ### TODO merge all the sites with smoove
 
