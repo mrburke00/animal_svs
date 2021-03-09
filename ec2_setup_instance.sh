@@ -69,5 +69,5 @@ conda init
 conda config --add channels bioconda
 
 ## setup snakemake
-conda install -c conda-forge mamba
+conda install -c conda-forge -y mamba
 mamba create -c bioconda -y -n snakemake snakemake boto3 boto
