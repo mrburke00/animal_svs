@@ -10,17 +10,33 @@ sudo apt-get install -y \
     ncurses-dev awscli python-pip libbz2-dev liblzma-dev unzip
 
 ## mount storage
-## TODO change to raid 0
 export TMPDIR=/mnt/local/temp
-sudo mkfs -t ext4 /dev/nvme0n1 
-
 sudo mkdir /mnt/local
-sudo mount /dev/nvme0n1 /mnt/local
-sudo chown ubuntu /mnt/local
 
+# setup raid 0 if more than one drive specified
+# the nvme drive naming convention is not consistent enough
+# so I have just resorted to filtering out nvme disks with
+# the expected size (ex smallest c5d has a 50GB so > 40 is my threshold)
+num_drives=$(lsblk -o NAME,SIZE | grep 'nvme'| awk '$2 ~ /G$/ && $2+0 > 40' | wc -l)
+if [[ $num_drives > 1 ]]; then
+    drive_list=$(lsblk -o NAME,SIZE | grep 'nvme' |
+                 awk '$2 ~ /G$/ && $2+0 > 40' |
+                 awk 'BEGIN{ORS=" "}{print "/dev/"$1 }')
+    sudo mdadm --create --verbose \
+         /dev/md0 \
+         --level=0 \
+         --raid-devices=$num_drives $drive_list
+    sudo mkfs -t ext4 /dev/md0
+    sudo mount /dev/md0 /mnt/local
+else
+    sudo mkfs -t ext4 /dev/nvme0n1 
+    sudo mount /dev/nvme0n1 /mnt/local
+fi
+
+sudo chown ubuntu /mnt/local
 mkdir /mnt/local/data
 mkdir /mnt/local/temp
-echo 'export TMPDIR=/mnt/local/temp' >> ~/.profile
+echo "export TMPDIR=/mnt/local/temp" >> ~/.profile
 
 ## tmux/neovim setup
 echo 'source-file ~/.tmux.d/.tmux.conf' > ~/.tmux.conf
