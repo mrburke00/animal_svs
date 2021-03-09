@@ -43,7 +43,7 @@ rule all:
 rule get_data:
     ## TODO use delegate functions based on remote/local
     ## to get outputs and relevant shell command
-    resources: disk_mb = bam_size['{sample}']
+    resources: lambda wildcards: disk_mb = bam_size[wildcards.sample]
     output:
         # TODO make the temp() designation an option, just in case someone
         # wants to keep the bams/fastqs, locally after running the pipeline
