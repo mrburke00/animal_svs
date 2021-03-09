@@ -57,8 +57,8 @@ rule get_data:
     log:
         f'{outdir}/log/{{sample}}.get_data.log'
     shell:
-        """aws s3 cp s3://{s3_bam_bucket}{wildcards.sample}.bam {output.bam} --no-progress 2> {log}
-        aws s3 cp s3://{s3_bam_bucket}{wildcards.sample}.bai {output.index} --no-progress 2>> {log}"""
+        """aws s3 cp s3://{s3_bam_bucket}{wildcards.sample}.bam {output.bam}  2> {log}
+        aws s3 cp s3://{s3_bam_bucket}{wildcards.sample}.bai {output.index} 2>> {log}"""
 
 
 rule test_get_data:
