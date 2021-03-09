@@ -29,8 +29,11 @@ objs = my_bucket.objects.filter(Prefix=prefix, Delimiter='/')
 bam_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.bam')]
 bai_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.bai')]
 bam_index_ext = 'bam.bai' if bai_list[0].endswith('.bam.bai') else 'bai'
-bam_size = {os.path.basename(x.key).rstrip('.bam'): x.size
-            for x in objs if x.key.endswith('.bam')}
+
+# get the size of the files ahead of time so that snakemake knows
+# disk resource footprint prior to DAG creation
+bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
+                  for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 ################################################################################
 ## Rules
@@ -43,7 +46,7 @@ rule all:
 rule get_data:
     ## TODO use delegate functions based on remote/local
     ## to get outputs and relevant shell command
-    resources: disk_mb = lambda wildcards: bam_size[wildcards.sample]
+    resources: disk_mb = lambda wildcards: bam_size_bytes[wildcards.sample]//1000000
     output:
         # TODO make the temp() designation an option, just in case someone
         # wants to keep the bams/fastqs, locally after running the pipeline
