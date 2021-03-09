@@ -62,12 +62,12 @@ wget https://github.com/brentp/gargs/releases/download/v0.3.9/gargs_linux -O /mn
 chmod +x /mnt/local/bin/gargs
 
 ## conda setup
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh
-bash ~/miniconda.sh -b -p $HOME/miniconda
-eval "$($HOME/miniconda/bin/conda shell.bash hook)"
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /mnt/local/miniconda.sh
+bash /mnt/local/miniconda.sh -b -p /mnt/local/miniconda
+eval "$(/mnt/local/miniconda/bin/conda shell.bash hook)"
 conda init
 conda config --add channels bioconda
+conda install -y -c conda-forge mamba
 
 ## setup snakemake
-conda install -c conda-forge -y mamba
-mamba create -c bioconda -y -n snakemake snakemake boto3 boto
+mamba create -c conda-forge -c bioconda -y -n snakemake snakemake boto3
