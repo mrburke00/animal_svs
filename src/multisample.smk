@@ -14,8 +14,8 @@ import boto3
 ################################################################################
 # configfile: "config.yaml"
 # conf = config_utils.Config(config)
-refdir = '/mnt/local/test/ref'
-outdir = '/mnt/local/test'
+refdir = '/mnt/local/data/ref'
+outdir = '/mnt/local/data'
 
 
 ### TODO Test with hard coded buckets
