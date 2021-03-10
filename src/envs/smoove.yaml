@@ -5,8 +5,7 @@ channels:
   - defaults
 dependencies:
   - smoove
-  - lumpy
-  - lumpy_filter
+  - lumpy-sv
   - samtools
   - svtyper
   - mosdepth
