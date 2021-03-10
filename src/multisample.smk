@@ -219,7 +219,7 @@ rule SmooveGenotype:
     shell:
         f"""
         smoove genotype --processes {{threads}} \\
-                        -- duphold \\
+                        --duphold \\
                         --removepr \\
                         --fasta {{input.fasta}} \\
                         --name {{wildcards.sample}} \\
