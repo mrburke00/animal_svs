@@ -177,3 +177,6 @@ rule SmooveCall:
 # Would need to require redownloading data, or have it be a separate
 # snakemake target rules that uses some rules in common: eg rule CallAll
 # and rule GenotypeAll.
+
+## TODO add some way to check if the contigs
+## in the FASTA ref match the BAM.
