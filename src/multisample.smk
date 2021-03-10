@@ -204,6 +204,8 @@ rule SmooveGenotype:
         # TODO after merge is complete change vcf to the merged vcf.
     output:
         f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz'
+    conda:
+        'envs/smoove.yaml'
     shell:
         f"""
         smoove genotype --processes {{threads}} \\
