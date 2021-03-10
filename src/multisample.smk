@@ -210,7 +210,6 @@ rule SmooveGenotype:
         f"""
         smoove genotype --processes {{threads}} \\
                         --removepr \\
-                        --duphold \\
                         --fasta {{input.fasta}} \\
                         --name {{wildcards.sample}} \\
                         --outdir {outdir}/{{wildcards.sample}} \\
