@@ -144,7 +144,7 @@ rule ExcludeRegions:
     shell:
         # TODO make max merge distance a config param
         """
-        cat {input.gap_bed} {input.high_cov} |
+        cat {input.gap_bed} <(cut -f1-3 {input.high_cov}) |
             bedtools sort -i stdin |
             bedtools merge -d 10 -i stdin > {output}"""
 
