@@ -35,6 +35,7 @@ bam_index_ext = 'bam.bai' if bai_list[0].endswith('.bam.bai') else 'bai'
 bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
                   for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
+
 ################################################################################
 ## Rules
 ################################################################################
@@ -46,111 +47,111 @@ rule all:
 rule get_data:
     ## TODO use delegate functions based on remote/local
     ## to get outputs and relevant shell command
-    resources: disk_mb = lambda wildcards: bam_size_bytes[wildcards.sample]//1000000
+    resources:
+        disk_mb = lambda wildcards: bam_size_bytes[wildcards.sample]//1000000
     output:
         # TODO make the temp() designation an option, just in case someone
         # wants to keep the bams/fastqs, locally after running the pipeline
         # * Could just use the --notemp flag on the snakemake command
-        # TODO handle case of .bam.bai/.bai
         bam = temp(f'{outdir}/{{sample}}.bam'),
         index = temp(f'{outdir}/{{sample}}.{bam_index_ext}')
     log:
         f'{outdir}/log/{{sample}}.get_data.log'
     shell:
-        """aws s3 cp s3://{s3_bam_bucket}{wildcards.sample}.bam {output.bam}  2> {log}
-        aws s3 cp s3://{s3_bam_bucket}{wildcards.sample}.bai {output.index} 2>> {log}"""
+        # TODO just use boto3 or try the remote() wrapper
+        # now that we are using the latest version of snakemake
+        f"""
+        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bam {{output.bam}}  2> {{log}}
+        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bai {{output.index}} 2>> {{log}}
+        """
 
-
-rule test_get_data:
-    input:
-        bam = outdir+'/{sample}.bam',
-        index = outdir+'/{sample}.bai'
+rule get_reference:
     output:
-        outdir+'/{sample}/{sample}.txt'
-    conda:
-        'envs/samtools.yaml'
+        fasta = temp(f'{refdir}/ref.fa'),
+        index = temp(f'{refdir}/ref.fa.fai')
+    log:
+        f'{outdir}/log/get_reference.log'
     shell:
-        'samtools view -H {input.bam} > {output}'
+        # TODO just use boto3 or try the remote() wrapper
+        # now that we are using the latest version of snakemake
+        f"""
+        aws s3 cp s3://{s3_ref_loc} {{output.fasta}} 2> {{log}}
+        aws s3 cp s3://{s3_ref_loc}.fai {{output.fasta}} 2> {{log}}
+        """
 
 
-# rule get_reference:
-#     output:
-#         fasta = temp(refdir+'/ref.fa')
-#         index = temp(refdir+'/ref.fa.fai')
-#     log:
-#         outdir+'/log/get_reference.log'
-#     shell:
-#         """aws s3 cp s3://{s3_ref_loc} {output.fasta} 2> {log}
-#         aws s3 cp s3://{s3_ref_loc}.fai {output.fasta} 2> {log}"""
-
-
-# rule high_cov_regions:
-#     input:
-#         outdir+'/{sample}.bam'
-#     params:
-#         prefix = outdir+'/{sample}/{sample}'
-#     output:
-#         quantized = temp(outdir+'/{sample}/{sample}.quantized.bed.gz')
-#         high_cov= temp(outdir+'/{sample}/{sample}.high_cov.bed')
-#     conda:
-#         'envs/mosdepth.yaml'
-#     shell:
-#         # TODO make the high cov bin a config param
-#         """mosdepth --no-per-base \
-#                     --fast-mode \
-#                     --fasta {get_reference.output.fasta}
-#                     --quantize 0:150: \
-#                     {params.prefix} {input}
-#            zgrep MOSDEPTH_Q1 {output.quantized} > {output.high_cov}"""
+rule high_cov_regions:
+    input:
+        bam = f'{outdir}/{{sample}}.bam',
+        bai = f'{outdir}/{{sample}}.{bam_index_ext}',
+        fasta = f'{refdir}/ref.fa',
+        fai = f'{refdir}/ref.fa.fai',
+    params:
+        prefix = f'{outdir}/{{sample}}/{{sample}}'
+    output:
+        quantized = temp(f'{outdir}/{{sample}}/{{sample}}.quantized.bed.gz'),
+        high_cov= temp(f'{outdir}/{{sample}}/{{sample}}.high_cov.bed')
+    conda:
+        'envs/mosdepth.yaml'
+    shell:
+        # TODO make the high cov bin a config param
+        """
+        mosdepth --no-per-base \\
+                 --fast-mode \\
+                 --fasta {input.fasta}
+                 --quantize 0:150: \\
+                 {params.prefix} {input.bam}
+        zgrep MOSDEPTH_Q1 {output.quantized} > {output.high_cov}"""
     
 
-# rule gap_regions:
-#     input:
-#         get_reference.output.fasta
-#     output:
-#         outdir+'/gap_regions.bed'
-#     conda:
-#         'envs/biopython.yaml'
-#     shell:
-#         'python scripts/gap_regions.py {input} > {output}'
+rule gap_regions:
+    input:
+        f'{refdir}/ref.fa'
+    output:
+        f'{outdir}/gap_regions.bed'
+    conda:
+        'envs/biopython.yaml'
+    shell:
+        'python scripts/gap_regions.py {input} > {output}'
     
 
-# rule exclude_regions:
-#     input:
-#         gap_bed = '{gap_regions.output}'
-#         high_cov = '{high_cov_regions.output.high_cov}'
-#     output:
-#         outdir+'/{sample}/{sample}.exclude.bed'
-#     conda:
-#         'envs/bedtools.yaml'
-#     shell:
-#         # TODO make max merge distance a config param
-#         """cat {input.gap_bed} {input.high_cov} |
-#              bedtools sort -i stdin |
-#              bedtools merge -d 10 -i stdin > {output}"""
+rule exclude_regions:
+    input:
+        gap_bed = f'{outdir}/gap_regions.bed',
+        high_cov= f'{outdir}/{{sample}}/{{sample}}.high_cov.bed'
+    output:
+        f'{outdir}/{{sample}}/{{sample}}.exclude.bed'
+    conda:
+        'envs/bedtools.yaml'
+    shell:
+        # TODO make max merge distance a config param
+        """
+        cat {input.gap_bed} {input.high_cov} |
+            bedtools sort -i stdin |
+            bedtools merge -d 10 -i stdin > {output}"""
 
-# rule smoove_call:
-#     input:
-#         bam = outdir+'/{sample}.bam'
-#         fasta = '{get_reference.output.fasta}'
-#         exclude = outdir+'/{sample}/{sample}.exclude.bed'
-#     params:
-#         output_dir = outdir+'/{sample}'
-#     output:
-#         outdir+'/{sample}/{sample}-smoove.genotyped.vcf.gz'
-#     conda:
-#         'envs/smoove.yaml'
-#     shell:
-#         """
-#         smoove call --genotype \
-#                     --duphold \
-#                     --removepr \
-#                     --fasta {input.fasta} \
-#                     --exclude {input.exclude} \
-#                     --name {wildcards.sample} \
-#                     --outdir {params.output_dir} \
-#                     {input.bam}
-#         """
+rule smoove_call:
+    input:
+        bam = f'{outdir}/{{sample}}.bam',
+        bai = f'{outdir}/{{sample}}.{bam_index_ext}',
+        fasta = f'{refdir}/ref.fa',
+        fai = f'{refdir}/ref.fai',
+        exclude = f'{outdir}/{{sample}}/{{sample}}.exclude.bed'
+    output:
+        f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz'
+    conda:
+        'envs/smoove.yaml'
+    shell:
+        f"""
+        smoove call --genotype \\
+                    --duphold \\
+                    --removepr \\
+                    --fasta {{input.fasta}} \\
+                    --exclude {{input.exclude}} \\
+                    --name {{wildcards.sample}} \\
+                    --outdir {outdir}/{{wildcards.sample}} \\
+                    {{input.bam}}
+        """
 
 ### TODO merge all the sites with smoove
 
