@@ -6,7 +6,9 @@ channels:
 dependencies:
   - smoove
   - lumpy-sv
+  - htslib
   - samtools
+  - bcftools
   - svtyper
   - mosdepth
   - duphold
