@@ -139,7 +139,7 @@ rule SmooveCall:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
         fasta = f'{refdir}/ref.fa',
-        fai = f'{refdir}/ref.fai',
+        fai = f'{refdir}/ref.fa.fai',
         exclude = f'{outdir}/{{sample}}/{{sample}}.exclude.bed'
     output:
         f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz'
