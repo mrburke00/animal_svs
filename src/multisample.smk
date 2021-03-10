@@ -161,7 +161,8 @@ rule SmooveCall:
         'envs/smoove.yaml'
     shell:
         f"""
-        smoove call --duphold \\
+        smoove call --processes 1 \\
+                    --duphold \\
                     --removepr \\
                     --fasta {{input.fasta}} \\
                     --exclude {{input.exclude}} \\
