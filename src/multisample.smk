@@ -102,7 +102,7 @@ rule HighCovRegions:
         """
         mosdepth --no-per-base \\
                  --fast-mode \\
-                 --fasta {input.fasta}
+                 --fasta {input.fasta} \\
                  --quantize 0:150: \\
                  {params.prefix} {input.bam}
         zgrep MOSDEPTH_Q1 {output.quantized} > {output.high_cov}"""
