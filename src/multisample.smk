@@ -14,6 +14,7 @@ import boto3
 ################################################################################
 # configfile: "config.yaml"
 # conf = config_utils.Config(config)
+### TODO test with hardcoded paths
 refdir = '/mnt/local/data/ref'
 outdir = '/mnt/local/data'
 
@@ -36,6 +37,8 @@ bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
                   for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 
+s3_ref_loc='layerlabcu/cow/ARS-UCD1.2_Btau5.0.1Y.fa'
+
 ################################################################################
 ## Rules
 ################################################################################
@@ -44,7 +47,7 @@ rule all:
         expand(outdir+'/{sample}/{sample}.txt', sample=samples),
 
 
-rule get_data:
+rule GetData:
     ## TODO use delegate functions based on remote/local
     ## to get outputs and relevant shell command
     resources:
@@ -65,7 +68,7 @@ rule get_data:
         aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bai {{output.index}} 2>> {{log}}
         """
 
-rule get_reference:
+rule GetReference:
     output:
         fasta = temp(f'{refdir}/ref.fa'),
         index = temp(f'{refdir}/ref.fa.fai')
@@ -80,7 +83,7 @@ rule get_reference:
         """
 
 
-rule high_cov_regions:
+rule HighCovRegions:
     input:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
@@ -104,7 +107,7 @@ rule high_cov_regions:
         zgrep MOSDEPTH_Q1 {output.quantized} > {output.high_cov}"""
     
 
-rule gap_regions:
+rule GapRegions:
     input:
         f'{refdir}/ref.fa'
     output:
@@ -115,7 +118,7 @@ rule gap_regions:
         'python scripts/gap_regions.py {input} > {output}'
     
 
-rule exclude_regions:
+rule ExcludeRegions:
     input:
         gap_bed = f'{outdir}/gap_regions.bed',
         high_cov= f'{outdir}/{{sample}}/{{sample}}.high_cov.bed'
@@ -130,7 +133,7 @@ rule exclude_regions:
             bedtools sort -i stdin |
             bedtools merge -d 10 -i stdin > {output}"""
 
-rule smoove_call:
+rule SmooveCall:
     input:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
