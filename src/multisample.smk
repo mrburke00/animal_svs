@@ -51,7 +51,9 @@ def bam_disk_usage(wildcards):
 ################################################################################
 rule all:
     input:
-        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
+        # expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
+        #        sample=samples)
+        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
                sample=samples)
 
 rule GetData:
