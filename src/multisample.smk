@@ -72,7 +72,7 @@ rule GetData:
 rule GetReference:
     output:
         fasta = temp(f'{refdir}/ref.fa'),
-        index = temp(f'{refdir}/ref.fa.fai')
+        fai = temp(f'{refdir}/ref.fa.fai')
     log:
         f'{outdir}/log/get_reference.log'
     shell:
@@ -80,7 +80,7 @@ rule GetReference:
         # now that we are using the latest version of snakemake
         f"""
         aws s3 cp s3://{s3_ref_loc} {{output.fasta}} 2> {{log}}
-        aws s3 cp s3://{s3_ref_loc}.fai {{output.fasta}} 2> {{log}}
+        aws s3 cp s3://{s3_ref_loc}.fai {{output.fai}} 2> {{log}}
         """
 
 
