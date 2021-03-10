@@ -44,7 +44,8 @@ s3_ref_loc='layerlabcu/cow/ARS-UCD1.2_Btau5.0.1Y.fa'
 ################################################################################
 rule all:
     input:
-        expand(outdir+'/{sample}/{sample}.txt', sample=samples),
+        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+               sample=samples)
 
 
 rule GetData:
