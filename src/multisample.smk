@@ -46,7 +46,7 @@ s3_ref_loc='layerlabcu/cow/ARS-UCD1.2_Btau5.0.1Y.prepend_chr.fa'
 ################################################################################
 rule all:
     input:
-        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
                sample=samples)
 
 rule GetData:
@@ -156,13 +156,12 @@ rule SmooveCall:
         fai = f'{refdir}/ref.fa.fai',
         exclude = f'{outdir}/{{sample}}/{{sample}}.exclude.bed'
     output:
-        f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz'
+        f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz'
     conda:
         'envs/smoove.yaml'
     shell:
         f"""
-        smoove call --genotype \\
-                    --duphold \\
+        smoove call --duphold \\
                     --removepr \\
                     --fasta {{input.fasta}} \\
                     --exclude {{input.exclude}} \\
