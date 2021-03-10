@@ -41,6 +41,11 @@ samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 
 s3_ref_loc='layerlabcu/cow/ARS-UCD1.2_Btau5.0.1Y.prepend_chr.fa'
 
+# TODO fold this into remote/local specific OOP implementation
+# eg if running on local data, we could just return 0 here
+def bam_disk_usage(wildcards):
+    return bam_size_bytes[wildcards.sample]//1000000
+
 ################################################################################
 ## Rules
 ################################################################################
@@ -52,8 +57,10 @@ rule all:
 rule GetData:
     ## TODO use delegate functions based on remote/local
     ## to get outputs and relevant shell command
+    ## TODO add checkpoint to run after this rule
+    ##      so that downstream disk_mb calculations update
     resources:
-        disk_mb = lambda wildcards: bam_size_bytes[wildcards.sample]//1000000
+        disk_mb = bam_disk_usage
     output:
         # TODO make the temp() designation an option, just in case someone
         # wants to keep the bams/fastqs, locally after running the pipeline
@@ -85,6 +92,8 @@ rule GetReference:
         """
 
 rule Mosdepth:
+    resources:
+        disk_mb = bam_disk_usage
     input:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
@@ -106,6 +115,8 @@ rule Mosdepth:
         """
 
 rule GetHighCov:
+    resources:
+        disk_mb = bam_disk_usage
     input:
         mosdepth_bed = f'{outdir}/{{sample}}/{{sample}}.regions.bed.gz'
     output:
@@ -134,6 +145,8 @@ rule GapRegions:
         'python scripts/gap_regions.py {input} > {output}'
     
 rule ExcludeRegions:
+    resources:
+        disk_mb = bam_disk_usage
     input:
         gap_bed = f'{outdir}/gap_regions.bed',
         high_cov= f'{outdir}/{{sample}}/{{sample}}.high_cov.bed'
@@ -149,6 +162,10 @@ rule ExcludeRegions:
             bedtools merge -d 10 -i stdin > {output}"""
 
 rule SmooveCall:
+    ## TODO list the rest of the outputs
+    ## TODO mark them all as temp.
+    resources:
+        disk_mb = bam_disk_usage
     input:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
@@ -162,8 +179,6 @@ rule SmooveCall:
     shell:
         f"""
         smoove call --processes 1 \\
-                    --duphold \\
-                    --removepr \\
                     --fasta {{input.fasta}} \\
                     --exclude {{input.exclude}} \\
                     --name {{wildcards.sample}} \\
@@ -171,7 +186,37 @@ rule SmooveCall:
                     {{input.bam}}
         """
 
-### TODO merge all the sites with smoove or SURVIVOR
+## TODO
+rule SmooveMerge:
+
+rule SmooveGenotype:
+    resources:
+        disk_mb = bam_disk_usage
+    threads: workflow.cores
+    input:
+        bam = f'{outdir}/{{sample}}.bam',
+        bai = f'{outdir}/{{sample}}.{bam_index_ext}',
+        fasta = f'{refdir}/ref.fa',
+        fai = f'{refdir}/ref.fa.fai',
+        vcf = f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz' 
+        # TODO after merge is complete change vcf to the merged vcf.
+    output:
+        f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz'
+    shell:
+        f"""
+        smoove genotype --processes {{threads}} \\
+                        --removepr \\
+                        --duphold \\
+                        --fasta {{input.fasta}} \\
+                        --name {{wildcards.sample}} \\
+                        --outdir {outdir}/{{wildcards.sample}} \\
+                        --vcf {{input.vcf}} \\
+                        {{input.bam}}
+        """
+        
+
+## TODO
+rule SmoovePaste:
 
 ### TODO Regenotype after merging?
 # Would need to require redownloading data, or have it be a separate
