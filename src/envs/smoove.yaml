@@ -6,7 +6,7 @@ channels:
 dependencies:
   - smoove
   - lumpy-sv
-  - htslib
+  - htslib=1.9
   - samtools
   - bcftools
   - svtyper
