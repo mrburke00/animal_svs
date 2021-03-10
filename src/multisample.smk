@@ -192,6 +192,16 @@ rule SmooveCall:
 rule SmooveMerge:
 
 rule SmooveGenotype:
+    ## TODO add --duphold flag
+    # I had to remove it because it was causing an error
+    # "could not import: bam_hdr_destroy".  Likely there is
+    # a problem with the version of htslib/samtools in the
+    # conda environment.
+    # Solution: take a single bam/reference and run smoove call
+    #           and smoove genotype --duphold with a dedicated
+    #           smoove conda environment.  Make note of the versions
+    #           of all the software packages and libraries, then go
+    #           back and specify version numbers in smoove.yaml
     resources:
         disk_mb = bam_disk_usage
     threads: workflow.cores
@@ -209,6 +219,7 @@ rule SmooveGenotype:
     shell:
         f"""
         smoove genotype --processes {{threads}} \\
+                        -- duphold \\
                         --removepr \\
                         --fasta {{input.fasta}} \\
                         --name {{wildcards.sample}} \\
