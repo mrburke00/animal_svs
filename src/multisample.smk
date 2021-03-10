@@ -7,6 +7,8 @@ as the starting point.  Will incorporate fastq alignment rule later.
 import os
 # import config_utils
 import boto3
+import numpy as np
+import pandas as pd
 
 
 ################################################################################
@@ -47,7 +49,6 @@ rule all:
         expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
                sample=samples)
 
-
 rule GetData:
     ## TODO use delegate functions based on remote/local
     ## to get outputs and relevant shell command
@@ -83,8 +84,7 @@ rule GetReference:
         aws s3 cp s3://{s3_ref_loc}.fai {{output.fai}} 2> {{log}}
         """
 
-
-rule HighCovRegions:
+rule Mosdepth:
     input:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
@@ -93,20 +93,35 @@ rule HighCovRegions:
     params:
         prefix = f'{outdir}/{{sample}}/{{sample}}'
     output:
-        quantized = temp(f'{outdir}/{{sample}}/{{sample}}.quantized.bed.gz'),
-        high_cov= temp(f'{outdir}/{{sample}}/{{sample}}.high_cov.bed')
+        temp(f'{outdir}/{{sample}}/{{sample}}.mosdepth.global.dist.txt'),
+        temp(f'{outdir}/{{sample}}/{{sample}}.mosdepth.summary.txt'),
+        temp(f'{outdir}/{{sample}}/{{sample}}.mosdepth.region.dist.txt'),
+        temp(f'{outdir}/{{sample}}/{{sample}}.regions.bed.gz')
     conda:
         'envs/mosdepth.yaml'
     shell:
-        # TODO make the high cov bin a config param
         """
-        mosdepth --no-per-base \\
-                 --fast-mode \\
-                 --fasta {input.fasta} \\
-                 --quantize 0:150: \\
+        mosdepth --by 100 --fast-mode --fasta {input.fasta} \\
                  {params.prefix} {input.bam}
-        zgrep MOSDEPTH_Q1 {output.quantized} > {output.high_cov}"""
-    
+        """
+
+rule GetHighCov:
+    input:
+        mosdepth_bed = f'{outdir}/{{sample}}/{{sample}}.regions.bed.gz'
+    output:
+        high_cov_bed = f'{outdir}/{{sample}}/{{sample}}.high_cov.bed'
+    run:
+        mosdepth_bed = pd.read_csv(
+            input.mosdepth_bed, compression='gzip', sep='\t',
+            names=['chrom', 'start', 'end', 'depth'])
+
+        # find regions with > 2 stddev above mean coverage
+        mean_depth = mosdepth_bed.depth.mean()
+        std_depth = mosdepth_bed.depth.std()
+        high_cov_bed = mosdepth_bed.loc[
+            mosdepth_bed.depth > (mean_depth + 2*std_depth)]
+        high_cov_bed.to_csv(output.high_cov_bed, sep='\t',
+                            header=False, index=False)
 
 rule GapRegions:
     input:
@@ -118,7 +133,6 @@ rule GapRegions:
     shell:
         'python scripts/gap_regions.py {input} > {output}'
     
-
 rule ExcludeRegions:
     input:
         gap_bed = f'{outdir}/gap_regions.bed',
@@ -157,7 +171,9 @@ rule SmooveCall:
                     {{input.bam}}
         """
 
-### TODO merge all the sites with smoove
+### TODO merge all the sites with smoove or SURVIVOR
 
 ### TODO Regenotype after merging?
-# Would need to require redownloading data
+# Would need to require redownloading data, or have it be a separate
+# snakemake target rules that uses some rules in common: eg rule CallAll
+# and rule GenotypeAll.
