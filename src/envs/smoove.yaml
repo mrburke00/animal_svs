@@ -1,7 +1,14 @@
 name: smoove
 channels:
-  - defaults
   - bioconda
   - conda-forge 
+  - defaults
 dependencies:
   - smoove
+  - lumpy
+  - lumpy_filter
+  - samtools
+  - svtyper
+  - mosdepth
+  - duphold
+  - svtools
