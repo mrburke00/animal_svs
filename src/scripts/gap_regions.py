@@ -7,7 +7,7 @@ from Bio import SeqIO
 from joblib import Parallel, delayed
 
 fasta = sys.argv[1]
-processes = sys.argv[2]
+processes = int(sys.argv[2])
 
 # with open(fasta, mode="r") as fasta_handle:
     # for record in SeqIO.parse(fasta_handle, "fasta"):
