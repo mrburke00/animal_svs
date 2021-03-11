@@ -45,7 +45,7 @@ if __name__ == "__main__":
             for r in regions:
                 print('\t'.join(r))
 
-def get_gaps(record):
+def get_gap_regions(record):
     regions = []
     start_pos = 0
     counter = 0
