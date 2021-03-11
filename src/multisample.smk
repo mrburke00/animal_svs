@@ -137,6 +137,9 @@ rule GetHighCov:
                             header=False, index=False)
 
 rule GapRegions:
+    priority : 1
+    threads:
+        workflow.cores
     input:
         f'{refdir}/ref.fa'
     output:
@@ -144,7 +147,7 @@ rule GapRegions:
     conda:
         'envs/biopython.yaml'
     shell:
-        'python scripts/gap_regions.py {input} > {output}'
+        'python scripts/gap_regions.py {input} {threads} > {output}'
     
 rule ExcludeRegions:
     resources:
@@ -192,17 +195,6 @@ rule SmooveCall:
 rule SmooveMerge:
 
 rule SmooveGenotype:
-    priority: 100
-    ## TODO add --duphold flag
-    # I had to remove it because it was causing an error
-    # "could not import: bam_hdr_destroy".  Likely there is
-    # a problem with the version of htslib/samtools in the
-    # conda environment.
-    # Solution: take a single bam/reference and run smoove call
-    #           and smoove genotype --duphold with a dedicated
-    #           smoove conda environment.  Make note of the versions
-    #           of all the software packages and libraries, then go
-    #           back and specify version numbers in smoove.yaml
     resources:
         disk_mb = bam_disk_usage
     priority: 1
@@ -230,7 +222,6 @@ rule SmooveGenotype:
                         {{input.bam}}
         """
         
-
 ## TODO
 rule SmoovePaste:
 
@@ -239,5 +230,5 @@ rule SmoovePaste:
 # snakemake target rules that uses some rules in common: eg rule CallAll
 # and rule GenotypeAll.
 
-## TODO add some way to check if the contigs
-## in the FASTA ref match the BAM.
+### TODO add some way to check if the contigs
+### in the FASTA ref match the BAM.
