@@ -6,7 +6,7 @@ snakemake -s multisample.smk \
           --resources disk_mb=1200000 \
           --use-conda --conda-frontend mamba \
           --conda-prefix /mnt/local/snakemake-conda \
-          --scheduler greedy -n
+          --scheduler greedy
 
 snakemake -s multisample.smk \
           -j $(grep -c ^processor /proc/cpuinfo) \
@@ -14,4 +14,4 @@ snakemake -s multisample.smk \
           --resources disk_mb=1200000 \
           --use-conda --conda-frontend mamba \
           --conda-prefix /mnt/local/snakemake-conda \
-          --scheduler greedy -n
+          --scheduler greedy
