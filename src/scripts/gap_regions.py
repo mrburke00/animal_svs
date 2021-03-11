@@ -53,8 +53,8 @@ def get_gap_regions(record):
                 gap_length += 1
         else:
             if gap:
-                regions.append(record.id, str(start_pos),
-                               str(start_pos + gap_length))
+                regions.append([record.id, str(start_pos),
+                                str(start_pos + gap_length)])
                 gap_length = 0
                 gap = False
         counter += 1
