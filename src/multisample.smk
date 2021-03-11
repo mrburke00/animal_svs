@@ -180,12 +180,14 @@ rule SmooveCall:
         fai = f'{refdir}/ref.fa.fai',
         exclude = f'{outdir}/{{sample}}/{{sample}}.exclude.bed'
     output:
-        temp(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz')
+        temp(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz')
     conda:
         'envs/smoove.yaml'
     shell:
         f"""
-        smoove call --processes 1 \\
+        smoove call --genotype \\
+                    --duphold \\
+                    --processes 1 \\
                     --fasta {{input.fasta}} \\
                     --exclude {{input.exclude}} \\
                     --name {{wildcards.sample}} \\
@@ -197,7 +199,7 @@ rule SmooveMerge:
     input:
         fasta = f'{refdir}/ref.fa',
         fai = f'{refdir}/ref.fa.fai',
-        vcfs = expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
+        vcfs = expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
                       sample=samples)
     output:
         f'{outdir}/merged.sites.vcf.gz'
@@ -211,45 +213,45 @@ rule SmooveMerge:
                      {{input.vcfs}}
         """
 
-rule SmooveGenotype:
-    resources:
-        disk_mb = bam_disk_usage
-    priority: 1
-    threads: workflow.cores
-    input:
-        bam = f'{outdir}/{{sample}}.bam',
-        bai = f'{outdir}/{{sample}}.{bam_index_ext}',
-        fasta = f'{refdir}/ref.fa',
-        fai = f'{refdir}/ref.fa.fai',
-        vcf = f'{outdir}/merged.sites.vcf.gz' 
-    output:
-        temp(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz')
-    conda:
-        'envs/smoove.yaml'
-    shell:
-        f"""
-        smoove genotype --processes {{threads}} \\
-                        --duphold \\
-                        --removepr \\
-                        --fasta {{input.fasta}} \\
-                        --name {{wildcards.sample}} \\
-                        --outdir {outdir}/{{wildcards.sample}} \\
-                        --vcf {{input.vcf}} \\
-                        {{input.bam}}
-        """
+# rule SmooveGenotype:
+#     resources:
+#         disk_mb = bam_disk_usage
+#     priority: 1
+#     threads: workflow.cores
+#     input:
+#         bam = f'{outdir}/{{sample}}.bam',
+#         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
+#         fasta = f'{refdir}/ref.fa',
+#         fai = f'{refdir}/ref.fa.fai',
+#         vcf = f'{outdir}/merged.sites.vcf.gz' 
+#     output:
+#         temp(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz')
+#     conda:
+#         'envs/smoove.yaml'
+#     shell:
+#         f"""
+#         smoove genotype --processes {{threads}} \\
+#                         --duphold \\
+#                         --removepr \\
+#                         --fasta {{input.fasta}} \\
+#                         --name {{wildcards.sample}} \\
+#                         --outdir {outdir}/{{wildcards.sample}} \\
+#                         --vcf {{input.vcf}} \\
+#                         {{input.bam}}
+#         """
         
-rule SmoovePaste:
-    input:
-        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
-               sample=samples)
-    output:
-        f'{outdir}/sites.smoove.square.vcf.gz'
-    conda:
-        'envs/smoove.yaml'
-    shell:
-        f"""
-        smoove paste --name sites \\
-                     --outdir {outdir} \\
-                     {{input}}
-        """
+# rule SmoovePaste:
+#     input:
+#         expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+#                sample=samples)
+#     output:
+#         f'{outdir}/sites.smoove.square.vcf.gz'
+#     conda:
+#         'envs/smoove.yaml'
+#     shell:
+#         f"""
+#         smoove paste --name sites \\
+#                      --outdir {outdir} \\
+#                      {{input}}
+#         """
 
