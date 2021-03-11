@@ -117,7 +117,7 @@ rule Mosdepth:
     shell:
         """
         mosdepth --by 100 --fast-mode --fasta {input.fasta} \\
-                 {params.prefix} {input.bam}
+                 --no-per-base {params.prefix} {input.bam}
         """
 
 rule GetHighCov:
@@ -141,7 +141,7 @@ rule GetHighCov:
                             header=False, index=False)
 
 rule GapRegions:
-    priority : 1
+    priority : 2
     threads:
         workflow.cores
     input:
@@ -173,6 +173,7 @@ rule ExcludeRegions:
 rule SmooveCall:
     ## TODO list the rest of the outputs
     ## TODO mark them all as temp.
+    priority: 1
     resources:
         disk_mb = bam_disk_usage
     input:
