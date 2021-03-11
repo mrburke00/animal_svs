@@ -37,7 +37,7 @@ def bam_disk_usage(wildcards):
 
 rule AllGenotype:
     input:
-        f'{outdir}/sites.smoove.square.vcf.gz'
+        f'{outdir}/squared.sites.vcf.gz'
 
 checkpoint GetData:
     resources:
