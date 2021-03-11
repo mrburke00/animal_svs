@@ -36,14 +36,6 @@ processes = int(sys.argv[2])
     #                 gap = False
     #         counter += 1
 
-if __name__ == "__main__":
-    with open(fasta, mode="r") as fasta_handle:
-        gap_regions = Parallel(n_jobs=processes)(
-            delayed(get_gap_regions)(record)
-            for record in SeqIO.parse(fasta_handle, "fasta"))
-        for regions in gap_regions:
-            for r in regions:
-                print('\t'.join(r))
 
 def get_gap_regions(record):
     regions = []
@@ -68,3 +60,11 @@ def get_gap_regions(record):
         counter += 1
     return regions
 
+if __name__ == "__main__":
+    with open(fasta, mode="r") as fasta_handle:
+        gap_regions = Parallel(n_jobs=processes)(
+            delayed(get_gap_regions)(record)
+            for record in SeqIO.parse(fasta_handle, "fasta"))
+        for regions in gap_regions:
+            for r in regions:
+                print('\t'.join(r))
