@@ -2,5 +2,16 @@
 
 snakemake -s multisample.smk \
           -j $(grep -c ^processor /proc/cpuinfo) \
-          --resources disk_mb=50000 \
-          --use-conda
+          --until AllCall
+          --resources disk_mb=1200000 \
+          --use-conda --conda-frontend mamba \
+          --conda-prefix /mnt/local/snakemake-conda \
+          --scheduler greedy -n
+
+snakemake -s multisample.smk \
+          -j $(grep -c ^processor /proc/cpuinfo) \
+          --until AllGenotype
+          --resources disk_mb=1200000 \
+          --use-conda --conda-frontend mamba \
+          --conda-prefix /mnt/local/snakemake-conda \
+          --scheduler greedy -n

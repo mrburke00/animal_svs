@@ -1,5 +1,3 @@
-# TODO make shell scripts and place them in the scripts directory to replace
-# the strings in the shell directives?
 """
 Multisample version of snakefile.  At the moment just testing with BAM/CRAM
 as the starting point.  Will incorporate fastq alignment rule later.
@@ -14,8 +12,10 @@ import pandas as pd
 ################################################################################
 ## Setup
 ################################################################################
-# configfile: "config.yaml"
-# conf = config_utils.Config(config)
+
+### TODO add some way to check if the contigs
+### in the FASTA ref match the BAM.
+
 ### TODO test with hardcoded paths
 refdir = '/mnt/local/data/ref'
 outdir = '/mnt/local/data'
@@ -51,16 +51,13 @@ def bam_disk_usage(wildcards):
 ################################################################################
 rule AllCall:
     input:
-        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
-               sample=samples)
+        f'{outdir}/merged.sites.vcf.gz' 
 
-## TODO
 rule AllGenotype:
-    # input:
-        # expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
-        #        sample=samples)
+    input:
+        f'{outdir}/sites.smoove.square.vcf.gz'
 
-rule GetData:
+checkpoint GetData:
     ## TODO use delegate functions based on remote/local
     ## to get outputs and relevant shell command
     ## TODO add checkpoint to run after this rule
@@ -183,7 +180,7 @@ rule SmooveCall:
         fai = f'{refdir}/ref.fa.fai',
         exclude = f'{outdir}/{{sample}}/{{sample}}.exclude.bed'
     output:
-        f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz'
+        temp(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz')
     conda:
         'envs/smoove.yaml'
     shell:
@@ -196,8 +193,23 @@ rule SmooveCall:
                     {{input.bam}}
         """
 
-## TODO
 rule SmooveMerge:
+    input:
+        fasta = f'{refdir}/ref.fa',
+        fai = f'{refdir}/ref.fa.fai',
+        vcfs = expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
+                      sample=samples)
+    output:
+        f'{outdir}/merged.sites.vcf.gz'
+    conda:
+        'envs/smoove.yaml'
+    shell:
+        f"""
+        smoove merge --name merged \\
+                     --fasta {{input.fasta}} \\
+                     --outdir {outdir} \\
+                     {{input.vcfs}}
+        """
 
 rule SmooveGenotype:
     resources:
@@ -209,10 +221,9 @@ rule SmooveGenotype:
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
         fasta = f'{refdir}/ref.fa',
         fai = f'{refdir}/ref.fa.fai',
-        vcf = f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz' 
-        # TODO after merge is complete change vcf to the merged vcf.
+        vcf = f'{outdir}/merged.sites.vcf.gz' 
     output:
-        f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz'
+        temp(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz')
     conda:
         'envs/smoove.yaml'
     shell:
@@ -227,13 +238,18 @@ rule SmooveGenotype:
                         {{input.bam}}
         """
         
-## TODO
 rule SmoovePaste:
+    input:
+        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+               sample=samples)
+    output:
+        f'{outdir}/sites.smoove.square.vcf.gz'
+    conda:
+        'envs/smoove.yaml'
+    shell:
+        f"""
+        smoove paste --name sites \\
+                     --outdir {outdir} \\
+                     {{input}}
+        """
 
-### TODO Regenotype after merging?
-# Would need to require redownloading data, or have it be a separate
-# snakemake target rules that uses some rules in common: eg rule CallAll
-# and rule GenotypeAll.
-
-### TODO add some way to check if the contigs
-### in the FASTA ref match the BAM.
