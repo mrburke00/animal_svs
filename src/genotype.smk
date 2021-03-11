@@ -104,12 +104,12 @@ rule SmoovePaste:
         vcfs = expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
                       sample=samples)
     output:
-        f'{outdir}/sites.smoove.square.vcf.gz'
+        f'{outdir}/squared.sites.vcf.gz'
     conda:
         'envs/smoove.yaml'
     shell:
         f"""
-        smoove merge --name sites \\
+        smoove merge --name squared \\
                      --outdir {outdir} \\
                      {{input}}
         """
