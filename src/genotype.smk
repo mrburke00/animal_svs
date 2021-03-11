@@ -69,7 +69,7 @@ rule SmooveGenotype:
     resources:
         disk_mb = bam_disk_usage
     priority: 1
-    threads: 2
+    threads: 1
     input:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
