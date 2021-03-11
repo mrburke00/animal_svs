@@ -66,6 +66,9 @@ rule GetReference:
         """
 
 rule SmooveGenotype:
+    ## TODO it seems that this process is removing 0/0 genotypes
+    # this makes the smoove paste operation fail because it needs the same # of
+    # variants in each file.
     resources:
         disk_mb = bam_disk_usage
     priority: 1
@@ -93,16 +96,20 @@ rule SmooveGenotype:
         """
 
 rule SmoovePaste:
+    ## TODO switch back to using paste instead of merge
+    # once we figure out how to genotype without removing 0/0 regions.
     input:
-        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
-               sample=samples)
+        fasta = f'{refdir}/ref.fa',
+        fai = f'{refdir}/ref.fa.fai',
+        vcfs = expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+                      sample=samples)
     output:
         f'{outdir}/sites.smoove.square.vcf.gz'
     conda:
         'envs/smoove.yaml'
     shell:
         f"""
-        smoove paste --name sites \\
+        smoove merge --name sites \\
                      --outdir {outdir} \\
                      {{input}}
         """
