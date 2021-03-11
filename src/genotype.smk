@@ -37,7 +37,7 @@ def bam_disk_usage(wildcards):
 
 rule AllGenotype:
     input:
-        f'{outdir}/squared.sites.vcf.gz'
+        f'{outdir}/sites.smoove.square.vcf.gz'
 
 checkpoint GetData:
     resources:
@@ -66,9 +66,6 @@ rule GetReference:
         """
 
 rule SmooveGenotype:
-    ## TODO it seems that this process is removing 0/0 genotypes
-    # this makes the smoove paste operation fail because it needs the same # of
-    # variants in each file.
     resources:
         disk_mb = bam_disk_usage
     priority: 1
@@ -96,20 +93,16 @@ rule SmooveGenotype:
         """
 
 rule SmoovePaste:
-    ## TODO switch back to using paste instead of merge
-    # once we figure out how to genotype without removing 0/0 regions.
     input:
-        fasta = f'{refdir}/ref.fa',
-        fai = f'{refdir}/ref.fa.fai',
-        vcfs = expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
-                      sample=samples)
+        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+               sample=samples)
     output:
-        f'{outdir}/squared.sites.vcf.gz'
+        f'{outdir}/sites.smoove.square.vcf.gz'
     conda:
         'envs/smoove.yaml'
     shell:
         f"""
-        smoove merge --name squared \\
+        smoove paste --name sites \\
                      --outdir {outdir} \\
                      {{input}}
         """
