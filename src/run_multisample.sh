@@ -2,7 +2,7 @@
 
 snakemake -s multisample.smk \
           -j $(grep -c ^processor /proc/cpuinfo) \
-          --until AllCall
+          --until AllCall \
           --resources disk_mb=1200000 \
           --use-conda --conda-frontend mamba \
           --conda-prefix /mnt/local/snakemake-conda \
@@ -10,7 +10,7 @@ snakemake -s multisample.smk \
 
 snakemake -s multisample.smk \
           -j $(grep -c ^processor /proc/cpuinfo) \
-          --until AllGenotype
+          --until AllGenotype \
           --resources disk_mb=1200000 \
           --use-conda --conda-frontend mamba \
           --conda-prefix /mnt/local/snakemake-conda \
