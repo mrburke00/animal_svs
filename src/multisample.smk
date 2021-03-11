@@ -49,12 +49,16 @@ def bam_disk_usage(wildcards):
 ################################################################################
 ## Rules
 ################################################################################
-rule all:
+rule AllCall:
     input:
-        # expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
-        #        sample=samples)
-        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+        expand(f'{outdir}/{{sample}}/{{sample}}-smoove.vcf.gz',
                sample=samples)
+
+## TODO
+rule AllGenotype:
+    # input:
+        # expand(f'{outdir}/{{sample}}/{{sample}}-smoove.genotyped.vcf.gz',
+        #        sample=samples)
 
 rule GetData:
     ## TODO use delegate functions based on remote/local
