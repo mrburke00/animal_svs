@@ -39,7 +39,7 @@ processes = int(sys.argv[2])
 if __name__ == "__main__":
     with open(fasta, mode="r") as fasta_handle:
         gap_regions = Parallel(n_jobs=processes)(
-            delayed(get_gaps_regions)(record)
+            delayed(get_gap_regions)(record)
             for record in SeqIO.parse(fasta_handle, "fasta"))
         for regions in gap_regions:
             for r in regions:
