@@ -168,6 +168,7 @@ rule SmooveCall:
     ## TODO mark them all as temp.
     resources:
         disk_mb = bam_disk_usage
+    priority: 1
     input:
         bam = f'{outdir}/{{sample}}.bam',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
@@ -204,6 +205,7 @@ rule SmooveGenotype:
     #           back and specify version numbers in smoove.yaml
     resources:
         disk_mb = bam_disk_usage
+    priority: 1
     threads: workflow.cores
     input:
         bam = f'{outdir}/{{sample}}.bam',
