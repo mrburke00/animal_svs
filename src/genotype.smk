@@ -84,7 +84,6 @@ rule SmooveGenotype:
         f"""
         smoove genotype --processes {{threads}} \\
                         --duphold \\
-                        --removepr \\
                         --fasta {{input.fasta}} \\
                         --name {{wildcards.sample}} \\
                         --outdir {outdir}/{{wildcards.sample}} \\
