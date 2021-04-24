@@ -1,0 +1,227 @@
+import os
+import random
+import pathlib
+import statistics
+
+HOME = str(pathlib.Path.home())
+
+# run parameters
+reference_fasta = '/home/zamc8857/ncbi-genomes-2021-04-22/small_bacteria_ref.fasta'
+# specifiy this HERE instead of using snakemakes -d param because the -d param doesn't play nice with 
+# using the scripts in scripts/ 
+OUTPUT_DIR = '/home/zamc8857/TEST_BACTERIA/' 
+genome_size = 0
+wgsim_seed = random.randint(0, 10000000)
+sample_name = f'seed{wgsim_seed}'
+tmp_genome_length = f'{HOME}/ref_length.txt'
+
+# simulate_reads params
+#   number of reads = coverage * genome_size / read_size
+number_of_reads = 0
+coverage = 20
+base_error_rate = 1/1000 # mock illumina accuracy
+outer_read_distance = 250
+std_dev = 50 # 50 is default
+number_paired_reads = 0 # set to number of reads / 2
+first_read_len = 100
+second_read_len = 100
+mutation_rate = 0
+indel_frac = 0
+probability_indel_extension = 0
+
+# expand svs values
+expansion_size = 1000
+
+# Find the genome length here. 
+# NOTE: I tried doing this in a rule using the "run" directive, but I couldn't get the global
+#       genome_size and number_paired_reads to update and I was getting 0. I'm probably just missing
+#       something with how snakemake uses globals, but heres the current work around
+
+shell(f"grep -v '^[>]' {reference_fasta} | wc -m > {tmp_genome_length}")
+genome_size = int(open(f'{tmp_genome_length}').read())
+os.remove(tmp_genome_length)
+number_of_reads = coverage * genome_size / statistics.mean([first_read_len, second_read_len])
+number_paired_reads = int(number_of_reads / 2)
+
+
+rule all:
+    input: 
+        f'{OUTPUT_DIR}{sample_name}_expanded_{expansion_size}_svs.bed'
+
+rule bwa_index:
+    input: 
+        ref = reference_fasta
+    output:
+        ref_bwt = f'{reference_fasta}.bwt'
+    conda: 
+        'envs/bwa.yaml'
+    shell: 
+        '''
+        bwa index {input.ref}
+        '''
+
+rule samtools_index_reference:
+    input: 
+        ref = reference_fasta
+    output:
+        ref_indexed = f'{reference_fasta}.fai'
+    conda: 
+        'envs/samtools.yaml'
+    shell:
+        '''
+        samtools faidx {input.ref} -o {output.ref_indexed}
+        '''
+
+rule simulate_reads:
+    input:
+        ref = reference_fasta
+    output:
+        read1 = f'{OUTPUT_DIR}seed{wgsim_seed}_R1.fastq',
+        read2 = f'{OUTPUT_DIR}seed{wgsim_seed}_R2.fastq'
+    params:
+        f"-e {base_error_rate} -d {outer_read_distance} -N {number_paired_reads} -1 {first_read_len} -2 {second_read_len} -r {mutation_rate} -R {indel_frac} -X {probability_indel_extension} -S {wgsim_seed}"
+    wrapper:
+        "0.74.0/bio/wgsim"
+
+rule align:
+    input:
+        ref = reference_fasta,
+        ref_bwt = rules.bwa_index.output.ref_bwt,
+        ref_indexed = rules.samtools_index_reference.output.ref_indexed,
+        r1_fastq = rules.simulate_reads.output.read1,
+        r2_fastq = rules.simulate_reads.output.read2
+    output:
+        aligned_bam = f'{OUTPUT_DIR}{sample_name}.bam'
+    params:
+        sample_name = sample_name
+    conda: 
+        'envs/bwa_samtools.yaml'
+    shell:
+        '''
+        bwa mem -R "@RG\\tID:{params.sample_name}\\tSM:{params.sample_name}\\tLB:lib1" \\
+                -t 8 \\
+                {input.ref} \\
+                {input.r1_fastq} \\
+                {input.r2_fastq} \\
+                | samtools view -Sb > {output.aligned_bam}
+        '''
+
+rule extract_discordant_reads:
+    input: 
+        bam = rules.align.output.aligned_bam
+    output:
+        sorted_disc_bam = f'{OUTPUT_DIR}{sample_name}.disc.bam'
+    params:
+        unsorted_disc_bam = f'{OUTPUT_DIR}{sample_name}.disc.unsorted.bam'
+    conda: 
+        'envs/samtools.yaml'
+    shell:
+        '''
+        samtools view -b -F 1294 {input.bam} > {params.unsorted_disc_bam} \\
+                      && samtools sort -O bam {params.unsorted_disc_bam} > {output.sorted_disc_bam}
+        '''
+
+rule extract_split_reads:
+    input:
+        bam = rules.align.output.aligned_bam
+    output:
+        sorted_split_bam = f'{OUTPUT_DIR}{sample_name}.split.bam'
+    params:
+        unsorted_split_bam = f'{OUTPUT_DIR}{sample_name}.split.unsorted.bam'
+    conda:
+        'envs/samtools.yaml'
+    shell:
+        '''
+        samtools view -h {input.bam} \\
+                      | python scripts/extractSplitReads_BwaMem.py -i stdin \\
+                      | samtools view -Sb > {params.unsorted_split_bam} \\
+                      && samtools sort -O bam {params.unsorted_split_bam} > {output.sorted_split_bam}
+        '''
+
+rule sort_bam:
+    input:
+        bam = rules.align.output.aligned_bam
+    output:
+        sorted_bam = f'{OUTPUT_DIR}{sample_name}.sorted.bam'
+    params:
+        sample_name = sample_name
+    conda:
+        'envs/samtools.yaml'
+    shell:
+        '''
+        samtools sort -O bam {input.bam} > {output.sorted_bam}
+        '''
+
+rule index_bam:
+    input: 
+        bam = rules.sort_bam.output.sorted_bam
+    output:
+        indexed_bam = f'{OUTPUT_DIR}{sample_name}.sorted.bam.bai'
+    conda: 
+        'envs/samtools.yaml'
+    shell:
+        '''
+        samtools index {input}
+        '''
+
+rule call_svs:
+    input: 
+        ref = reference_fasta, 
+        ref_indexed = rules.samtools_index_reference.output.ref_indexed,
+        sorted_bam = rules.sort_bam.output.sorted_bam, 
+        indexed_bam = rules.index_bam.output.indexed_bam, 
+        split_bam = rules.extract_split_reads.output.sorted_split_bam,
+        disc_bam = rules.extract_discordant_reads.output.sorted_disc_bam
+    output:
+        vcf = f'{OUTPUT_DIR}{sample_name}.vcf'
+    params:
+        sample_name = rules.sort_bam.params.sample_name
+    conda: 
+        'envs/lumpy.yaml'
+    shell: 
+        '''
+        bash scripts/lumpy_call.sh {input.sorted_bam} {params.sample_name} > {output.vcf}
+        '''
+
+# TODO: Ask ryan about some of the differences
+# -pe id:seed8715760,bam_file:/home/zamc8857/animal_svs/simulation//seed8715760.disc.bam,histo_file:/home/zamc8857/animal_svs/simulation//seed8715760.histo,mean:249.222528736,stdev:49.1120244007,read_length:100,min_non_overlap:100,discordant_z:4,   back_distance:20,weight:1,min_mapping_threshold:0 -sr id:seed8715760,bam_file:/home/zamc8857/animal_svs/simulation//seed8715760.split.bam,back_distance:10,weight:1,min_mapping_threshold:0
+# -pe id:seed42,     bam_file:seed42//seed42.disc.bam,                                   histo_file:seed42//seed42.histo                                   ,mean:249.90,       stdev:49.28,        read_length:100,min_non_overlap:100,discordant_z:2.75,back_distance:30,weight:1,min_mapping_threshold:0 -sr id:seed42,     bam_file:seed42//seed42.split.bam,                                   back_distance:10,weight:1,min_mapping_threshold:0
+
+rule extract_breakpoints:
+    input:
+        vcf = rules.call_svs.output.vcf 
+    output:
+        breakpoints_bed = f'{OUTPUT_DIR}{sample_name}.breakpoints.bed'
+    params:
+        pos_breakpoints_bed = f'{OUTPUT_DIR}{sample_name}.breakpoints.pos.bed',
+        end_breakpoints_bed = f'{OUTPUT_DIR}{sample_name}.breakpoints.end.bed'
+    conda:
+        'envs/bcftools.yaml'
+    shell:
+        '''
+        bcftools query -f "%CHROM\t%POS\t%CIPOS\n" {input.vcf} > {params.pos_breakpoints_bed} \\
+        && bcftools query -f "%CHROM\t%END\t%CIEND\n" {input.vcf} > {params.end_breakpoints_bed} \\
+        && cat {params.pos_breakpoints_bed} {params.end_breakpoints_bed} > {output.breakpoints_bed}
+        '''
+
+rule breakpoints_to_bed:
+    input:
+        breakpoints_bed = rules.extract_breakpoints.output.breakpoints_bed
+    output:
+        bed = f'{OUTPUT_DIR}{sample_name}_vcfs.bed'
+    shell:
+        '''
+        python scripts/breakpoints_to_bed.py {input.breakpoints_bed} {output.bed}
+        '''
+
+rule expand_svs:
+    input:
+        bed = rules.breakpoints_to_bed.output.bed 
+    output:
+        expanded_svs = f'{OUTPUT_DIR}{sample_name}_expanded_{expansion_size}_svs.bed'
+    params:
+        padding = expansion_size
+    shell:
+        '''
+        python scripts/expand_svs.py {input.bed} {output.expanded_svs} {padding}
+        '''

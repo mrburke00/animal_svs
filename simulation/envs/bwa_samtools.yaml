@@ -1,0 +1,8 @@
+name: bwa_samtools
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - bwa
+  - samtools
