@@ -42,7 +42,7 @@ GET_BAM_PARAMS () {
     
     MEAN=`cat $OUTDIR/$ID.stats | tail -n 1| cut -f1 | cut -d":" -f2`
     STD=`cat $OUTDIR/$ID.stats | tail -n 1| cut -f2 | cut -d":" -f2`
-    PE_PARAM="-pe id:$ID,bam_file:$OUTDIR/$ID.disc.bam,histo_file:$OUTDIR/$ID.histo,mean:$MEAN,stdev:$STD,read_length:$READ_LENGTH,min_non_overlap:$READ_LENGTH,discordant_z:4,back_distance:20,weight:1,min_mapping_threshold:0 "
+    PE_PARAM="-pe id:$ID,bam_file:$OUTDIR/$ID.disc.bam,histo_file:$OUTDIR/$ID.histo,mean:$MEAN,stdev:$STD,read_length:$READ_LENGTH,min_non_overlap:$READ_LENGTH,discordant_z:2.75,back_distance:20,weight:1,min_mapping_threshold:0 "
 
     GLOBAL_LUMPY+=$PE_PARAM
 
@@ -52,9 +52,9 @@ GET_BAM_PARAMS () {
 }
 OUTDIR=$(cd $(dirname $1); pwd -P)/
 
-GLOBAL_LUMPY="lumpy -mw 4 -t $(mktemp) -tt 0 "
+GLOBAL_LUMPY="lumpy -mw 1 -msw 1 -t $(mktemp) -tt 0 "
 BAM_PREP $1 $2 
 GET_BAM_PARAMS $1 $2 
 
-echo $GLOBAL_LUMPY
+# echo $GLOBAL_LUMPY
 eval $GLOBAL_LUMPY

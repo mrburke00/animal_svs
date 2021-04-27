@@ -6,10 +6,10 @@ import statistics
 HOME = str(pathlib.Path.home())
 
 # run parameters
-reference_fasta = '/home/zamc8857/ncbi-genomes-2021-04-22/small_bacteria_ref.fasta'
+reference_fasta = '/home/zamc8857/human_sim/ref/hg38.fasta'
 # specifiy this HERE instead of using snakemakes -d param because the -d param doesn't play nice with 
 # using the scripts in scripts/ 
-OUTPUT_DIR = '/home/zamc8857/TEST_BACTERIA/' 
+OUTPUT_DIR = '/home/zamc8857/human_sim/' 
 genome_size = 0
 wgsim_seed = random.randint(0, 10000000)
 sample_name = f'seed{wgsim_seed}'
@@ -18,7 +18,7 @@ tmp_genome_length = f'{HOME}/ref_length.txt'
 # simulate_reads params
 #   number of reads = coverage * genome_size / read_size
 number_of_reads = 0
-coverage = 20
+coverage = 100
 base_error_rate = 1/1000 # mock illumina accuracy
 outer_read_distance = 250
 std_dev = 50 # 50 is default
@@ -183,10 +183,6 @@ rule call_svs:
         bash scripts/lumpy_call.sh {input.sorted_bam} {params.sample_name} > {output.vcf}
         '''
 
-# TODO: Ask ryan about some of the differences
-# -pe id:seed8715760,bam_file:/home/zamc8857/animal_svs/simulation//seed8715760.disc.bam,histo_file:/home/zamc8857/animal_svs/simulation//seed8715760.histo,mean:249.222528736,stdev:49.1120244007,read_length:100,min_non_overlap:100,discordant_z:4,   back_distance:20,weight:1,min_mapping_threshold:0 -sr id:seed8715760,bam_file:/home/zamc8857/animal_svs/simulation//seed8715760.split.bam,back_distance:10,weight:1,min_mapping_threshold:0
-# -pe id:seed42,     bam_file:seed42//seed42.disc.bam,                                   histo_file:seed42//seed42.histo                                   ,mean:249.90,       stdev:49.28,        read_length:100,min_non_overlap:100,discordant_z:2.75,back_distance:30,weight:1,min_mapping_threshold:0 -sr id:seed42,     bam_file:seed42//seed42.split.bam,                                   back_distance:10,weight:1,min_mapping_threshold:0
-
 rule extract_breakpoints:
     input:
         vcf = rules.call_svs.output.vcf 
@@ -223,5 +219,5 @@ rule expand_svs:
         padding = expansion_size
     shell:
         '''
-        python scripts/expand_svs.py {input.bed} {output.expanded_svs} {padding}
+        python scripts/expand_svs.py {input.bed} {output.expanded_svs} {params.padding}
         '''
