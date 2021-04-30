@@ -5,21 +5,19 @@ import statistics
 
 HOME = str(pathlib.Path.home())
 
-# run parameters
-reference_fasta = '/home/zamc8857/human_sim/ref/hg38.fasta'
-# specifiy this HERE instead of using snakemakes -d param because the -d param doesn't play nice with 
-# using the scripts in scripts/ 
-OUTPUT_DIR = '/home/zamc8857/human_sim/' 
+# CONFIGURABLE PARAMETERS
+reference_fasta = ''
+OUTPUT_DIR = '' # specifiy this HERE instead of using snakemakes -d param because the -d param doesn't play nice with using the scripts in scripts/ 
+wgsim_seed = random.randint(0, 10000000) 
+coverage = 20 # depth to sequence to in wgsim step
+base_error_rate = 1/1000 # mock illumina accuracy
+expansion_size = 1000 # to expand svs at the end 
+
+# PIPELINE VARIABLES
 genome_size = 0
-wgsim_seed = random.randint(0, 10000000)
 sample_name = f'seed{wgsim_seed}'
 tmp_genome_length = f'{HOME}/ref_length.txt'
-
-# simulate_reads params
-#   number of reads = coverage * genome_size / read_size
-number_of_reads = 0
-coverage = 100
-base_error_rate = 1/1000 # mock illumina accuracy
+number_of_reads = 0 # number of reads = coverage * genome_size / read_size
 outer_read_distance = 250
 std_dev = 50 # 50 is default
 number_paired_reads = 0 # set to number of reads / 2
@@ -29,14 +27,10 @@ mutation_rate = 0
 indel_frac = 0
 probability_indel_extension = 0
 
-# expand svs values
-expansion_size = 1000
-
 # Find the genome length here. 
 # NOTE: I tried doing this in a rule using the "run" directive, but I couldn't get the global
 #       genome_size and number_paired_reads to update and I was getting 0. I'm probably just missing
 #       something with how snakemake uses globals, but heres the current work around
-
 shell(f"grep -v '^[>]' {reference_fasta} | wc -m > {tmp_genome_length}")
 genome_size = int(open(f'{tmp_genome_length}').read())
 os.remove(tmp_genome_length)
