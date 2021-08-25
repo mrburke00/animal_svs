@@ -77,7 +77,7 @@ checkpoint GetData:
         # now that we are using the latest version of snakemake
         f"""
         aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bam {{output.bam}}  2> {{log}}
-        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}bam.bai {{output.index}} 2>> {{log}}
+        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bam.bai {{output.index}} 2>> {{log}}
         """
 
 rule GetReference:
