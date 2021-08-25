@@ -30,7 +30,7 @@ bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
                   for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 
-s3_ref_loc='s3://layerlabcu/ref/genomes/GCA_000002315.5_GRCg6a_genomic/GCA_000002315.5_GRCg6a_genomic.fa'
+s3_ref_loc=layerlabcu/ref/genomes/GCA_000002315.5_GRCg6a_genomic/GCA_000002315.5_GRCg6a_genomic.fa'
 
 def bam_disk_usage(wildcards):
     return bam_size_bytes[wildcards.sample]//1000000
