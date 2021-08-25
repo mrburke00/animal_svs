@@ -22,7 +22,7 @@ outdir = '/mnt/local/data'
 
 
 ### TODO Test with hard coded buckets
-s3_bam_bucket = 'layerlabcu/cow/bams/'
+s3_bam_bucket = 'layerlabcu/sra/chicken/'
 bucket_name, prefix = s3_bam_bucket.split('/', 1)
 botoS3 = boto3.resource('s3')
 my_bucket = botoS3.Bucket(bucket_name)
@@ -39,7 +39,7 @@ bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
                   for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 
-s3_ref_loc='layerlabcu/cow/ARS-UCD1.2_Btau5.0.1Y.prepend_chr.fa'
+s3_ref_loc='layerlabcu/ref/genomes/GCA_000002315.5_GRCg6a_genomic/GCA_000002315.5_GRCg6a_genomic.fa'
 
 # TODO fold this into remote/local specific OOP implementation
 # eg if running on local data, we could just return 0 here
@@ -77,7 +77,7 @@ checkpoint GetData:
         # now that we are using the latest version of snakemake
         f"""
         aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bam {{output.bam}}  2> {{log}}
-        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bai {{output.index}} 2>> {{log}}
+        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}bam.bai {{output.index}} 2>> {{log}}
         """
 
 rule GetReference:
