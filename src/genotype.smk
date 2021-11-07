@@ -13,7 +13,7 @@ refdir = '/mnt/local/data/ref'
 outdir = '/mnt/local/data'
 
 ### TODO Test with hard coded buckets
-s3_bam_bucket = 'layerlabcu/sra/chicken/'
+s3_bam_bucket = 'layerlabcu/sra/fiji_test/'
 bucket_name, prefix = s3_bam_bucket.split('/', 1)
 botoS3 = boto3.resource('s3')
 my_bucket = botoS3.Bucket(bucket_name)

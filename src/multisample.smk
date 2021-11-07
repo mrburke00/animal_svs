@@ -17,12 +17,12 @@ import pandas as pd
 ### in the FASTA ref match the BAM.
 
 ### TODO test with hardcoded paths
-refdir = '/mnt/local/data/ref'
-outdir = '/mnt/local/data'
+refdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref'
+outdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data'
 
 
 ### TODO Test with hard coded buckets
-s3_bam_bucket = 'layerlabcu/sra/chicken/'
+s3_bam_bucket = 'layerlabcu/sra/fiji_test/'
 bucket_name, prefix = s3_bam_bucket.split('/', 1)
 botoS3 = boto3.resource('s3')
 my_bucket = botoS3.Bucket(bucket_name)
@@ -39,8 +39,7 @@ bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
                   for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 
-s3_ref_loc='layerlabcu/ref/genomes/GCA_000002315.5_GRCg6a_genomic/GCA_000002315.5_GRCg6a_genomic.fa'
-
+s3_ref_loc='layerlabcu/ref/genomes/chicken/GCA_000002315.5_GRCg6a_genomic_chicken.fa'
 # TODO fold this into remote/local specific OOP implementation
 # eg if running on local data, we could just return 0 here
 def bam_disk_usage(wildcards):
@@ -148,7 +147,7 @@ rule GapRegions:
     conda:
         'envs/biopython.yaml'
     shell:
-        'python scripts/gap_regions.py {input} {threads} > {output}'
+        'python /scratch/Shares/layer/workspace/devin_sra/sv_pipe/src/scripts/gap_regions.py {input} {threads} > {output}'
     
 rule ExcludeRegions:
     resources:
@@ -217,7 +216,7 @@ rule SmooveMerge:
 #     resources:
 #         disk_mb = bam_disk_usage
 #     priority: 1
-#     threads: workflow.cores
+#     threads: 12
 #     input:
 #         bam = f'{outdir}/{{sample}}.bam',
 #         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
