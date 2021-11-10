@@ -2,3 +2,11 @@ s3:
     True
 s3_bucket:
     "s3://layerlabcu/sra/horseshoe_bat/"
+refdir:
+    "/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref"
+outdir:
+    "/scratch/Shares/layer/workspace/devin_sra/sv_results/data"
+s3_bam_bucket:
+    "layerlabcu/sra/horseshoe_bat/"
+s3_ref_loc:
+    "layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_genomic.fa"

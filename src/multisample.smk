@@ -7,7 +7,8 @@ import os
 import boto3
 import numpy as np
 import pandas as pd
-
+import yaml
+import io
 
 ################################################################################
 ## Setup
@@ -15,6 +16,11 @@ import pandas as pd
 
 ### TODO add some way to check if the contigs
 ### in the FASTA ref match the BAM.
+
+with open("config.yaml", 'r') as stream:
+    data_loaded = yaml.safe_load(stream)
+print(data_loaded
+
 
 ### TODO test with hardcoded paths
 refdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref'
@@ -44,7 +50,7 @@ s3_ref_loc='layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_gen
 # eg if running on local data, we could just return 0 here
 def bam_disk_usage(wildcards):
     return bam_size_bytes[wildcards.sample]//1000000
-
+'''
 ################################################################################
 ## Rules
 ################################################################################
@@ -254,3 +260,4 @@ rule SmooveMerge:
 #                      {{input}}
 #         """
 
+'''
