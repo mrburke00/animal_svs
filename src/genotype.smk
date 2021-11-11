@@ -1,19 +1,30 @@
 import os
 # import config_utils
 import boto3
-
+import yaml
+import io
 ################################################################################
 ## Setup
 ################################################################################
 ### TODO I'm repeating myself here with some of these rules
 # rules can be imported or even inherited so we can look into that
 
-refdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref'
-outdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data'
+with open("config.yaml", 'r') as stream:
+    data_loaded = yaml.safe_load(stream)
+#print(data_loaded)
 
+#refdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref'
+#outdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data'
+
+refdir = data_loaded['refdir']
+outdir = data_loaded['oudir']
 
 ### TODO Test with hard coded buckets
-s3_bam_bucket = 'layerlabcu/sra/horseshoe_bat/'
+
+#s3_bam_bucket = 'layerlabcu/sra/horseshoe_bat/'
+
+s3_bam_bucket = data_loaded['s3_bam_bucket']
+
 bucket_name, prefix = s3_bam_bucket.split('/', 1)
 botoS3 = boto3.resource('s3')
 my_bucket = botoS3.Bucket(bucket_name)
@@ -30,12 +41,15 @@ bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
                   for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 
-s3_ref_loc='layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_genomic.fa'
+#s3_ref_loc='layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_genomic.fa'
 
+s3_ref_loc = data_loaded['s3_ref_loc']
 
 def bam_disk_usage(wildcards):
     return bam_size_bytes[wildcards.sample]//1000000
-
+################################################################################
+## Rules
+################################################################################
 rule AllGenotype:
     input:
         f'{outdir}/sites.smoove.square.vcf.gz'

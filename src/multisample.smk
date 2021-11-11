@@ -19,16 +19,21 @@ import io
 
 with open("config.yaml", 'r') as stream:
     data_loaded = yaml.safe_load(stream)
-print(data_loaded
+#print(data_loaded)
 
 
 ### TODO test with hardcoded paths
-refdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref'
-outdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data'
+#refdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref'
+#outdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data'
 
+refdir = data_loaded['refdir']
+outdir = data_loaded['outdir']
 
 ### TODO Test with hard coded buckets
-s3_bam_bucket = 'layerlabcu/sra/horseshoe_bat/'
+#s3_bam_bucket = 'layerlabcu/sra/horseshoe_bat/'
+
+s3_bam_bucket = data_loaded['s3_bam_bucket']
+
 bucket_name, prefix = s3_bam_bucket.split('/', 1)
 botoS3 = boto3.resource('s3')
 my_bucket = botoS3.Bucket(bucket_name)
@@ -45,12 +50,15 @@ bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
                   for x in objs if x.key.endswith('.bam')}
 samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
 
-s3_ref_loc='layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_genomic.fa'
+#s3_ref_loc='layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_genomic.fa'
+
+s3_ref_loc=data_loaded['s3_ref_loc']
+
 # TODO fold this into remote/local specific OOP implementation
 # eg if running on local data, we could just return 0 here
 def bam_disk_usage(wildcards):
     return bam_size_bytes[wildcards.sample]//1000000
-'''
+
 ################################################################################
 ## Rules
 ################################################################################
@@ -260,4 +268,4 @@ rule SmooveMerge:
 #                      {{input}}
 #         """
 
-'''
+
