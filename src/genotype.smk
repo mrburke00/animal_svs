@@ -9,7 +9,7 @@ import io
 ### TODO I'm repeating myself here with some of these rules
 # rules can be imported or even inherited so we can look into that
 
-with open("config.yaml", 'r') as stream:
+with open("/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_pipe/src/config.yaml", 'r') as stream:
     data_loaded = yaml.safe_load(stream)
 #print(data_loaded)
 
@@ -17,7 +17,7 @@ with open("config.yaml", 'r') as stream:
 #outdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data'
 
 refdir = data_loaded['refdir']
-outdir = data_loaded['oudir']
+outdir = data_loaded['outdir']
 
 ### TODO Test with hard coded buckets
 

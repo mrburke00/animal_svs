@@ -1,12 +1,24 @@
 s3:
     True
 s3_bucket:
-    "s3://layerlabcu/sra/horseshoe_bat/"
+    "s3://1000genomes/1000G_2504_high_coverage/data/"
+    #"s3://layerlabcu/sra/chicken/"
 refdir:
-    "/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref"
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/data/human/ref"
+    #"/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/data/ref/"
 outdir:
-    "/scratch/Shares/layer/workspace/devin_sra/sv_results/data"
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/human/data"
+    #"/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/data/ref/"
 s3_bam_bucket:
-    "layerlabcu/sra/horseshoe_bat/"
+    "1000genomes/1000G_2504_high_coverage/data/"
+    #"layerlabcu/sra/chicken/"
 s3_ref_loc:
-    "layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_genomic.fa"
+    "layerlabcu/ref/genomes/GRCh38_full_analysis_set_plus_decoy_hla/GRCh38_full_analysis_set_plus_decoy_hla.fa"
+file_type:
+    "cram"
+file_index:
+    "crai"
+read_from_file:
+    True
+file_name:
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/human_cram.txt"
