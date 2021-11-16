@@ -3,26 +3,21 @@ import os
 import boto3
 import yaml
 import io
+parse = '/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_pipe/src/scripts/'
+sys.path.insert(1,parse)
+import readSamplesFile
 ################################################################################
 ## Setup
 ################################################################################
-### TODO I'm repeating myself here with some of these rules
-# rules can be imported or even inherited so we can look into that
 
 with open("/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_pipe/src/config.yaml", 'r') as stream:
     data_loaded = yaml.safe_load(stream)
-#print(data_loaded)
 
-#refdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data/ref'
-#outdir = '/scratch/Shares/layer/workspace/devin_sra/sv_results/data'
 
 refdir = data_loaded['refdir']
-outdir = data_loaded['outdir']
-
-### TODO Test with hard coded buckets
-
-#s3_bam_bucket = 'layerlabcu/sra/horseshoe_bat/'
-
+outdir = str(data_loaded['outdir'])
+file_type = data_loaded['file_type']
+file_index = data_loaded['file_index']
 s3_bam_bucket = data_loaded['s3_bam_bucket']
 
 bucket_name, prefix = s3_bam_bucket.split('/', 1)
@@ -30,18 +25,29 @@ botoS3 = boto3.resource('s3')
 my_bucket = botoS3.Bucket(bucket_name)
 objs = my_bucket.objects.filter(Prefix=prefix, Delimiter='/')
 
-### TODO add support for CRAM/CRAI                                                     
-bam_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.bam')]
-bai_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.bai')]
-bam_index_ext = 'bam.bai' if bai_list[0].endswith('.bam.bai') else 'bai'
+if data_loaded['read_from_file']:
 
-# get the size of the files ahead of time so that snakemake knows
-# disk resource footprint prior to DAG creation
-bam_size_bytes = {os.path.basename(x.key).rstrip('.bam'): x.size
-                  for x in objs if x.key.endswith('.bam')}
-samples = [x.lstrip(s3_bam_bucket).rstrip('.bam') for x in bam_list]
+	bam_list, bai_list, bam_size_bytes = readSamplesFile.get_samples(	      \
+							data_loaded['file_name'],     \
+							data_loaded['s3_bam_bucket'], \
+							data_loaded['file_type'],     \
+							data_loaded['file_index'])	
 
-#s3_ref_loc='layerlabcu/ref/genomes/horshoe_bat/GCF_004115265.1_mRhiFer1_v1.p_genomic.fa'
+else:
+
+	bucket_name, prefix = s3_bam_bucket.split('/', 1)
+	botoS3 = boto3.resource('s3')
+	my_bucket = botoS3.Bucket(bucket_name)
+	objs = my_bucket.objects.filter(Prefix=prefix, Delimiter='/')
+
+	bam_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.'+file_type)]
+	bai_list = [x.bucket_name + '/' + x.key for x in objs if x.key.endswith('.'+file_index)]
+	bam_size_bytes = {os.path.basename(x.key).rstrip('.'+file_type): x.size
+                  for x in objs if x.key.endswith('.'+file_type)}
+
+bam_index_ext = file_type+'.'+file_index if bai_list[0].endswith('.'+file_type+'.'+file_index) else file_index
+
+samples = [x.lstrip(s3_bam_bucket).rstrip('.'+file_type) for x in bam_list]
 
 s3_ref_loc = data_loaded['s3_ref_loc']
 
@@ -58,14 +64,14 @@ checkpoint GetData:
     resources:
         disk_mb = bam_disk_usage
     output:
-        bam = temp(f'{outdir}/{{sample}}.bam'),
+        bam = temp(f'{outdir}/{{sample}}.{file_type}'),
         index = temp(f'{outdir}/{{sample}}.{bam_index_ext}')
     log:
         f'{outdir}/log/{{sample}}.get_data.log'
     shell:
         f"""
-        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bam {{output.bam}}  2> {{log}}
-        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.bam.bai {{output.index}} 2>> {{log}}
+        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.{file_type} {{output.bam}}  2> {{log}}
+        aws s3 cp s3://{s3_bam_bucket}{{wildcards.sample}}.{file_type}.{file_index} {{output.index}} 2>> {{log}}
         """
 
 rule GetReference:
@@ -86,7 +92,7 @@ rule SmooveGenotype:
     priority: 1
     threads: 1
     input:
-        bam = f'{outdir}/{{sample}}.bam',
+        bam = f'{outdir}/{{sample}}.{file_type}',
         bai = f'{outdir}/{{sample}}.{bam_index_ext}',
         fasta = f'{refdir}/ref.fa',
         fai = f'{refdir}/ref.fa.fai',
