@@ -1,24 +1,33 @@
 s3:
     True
 s3_bucket:
-    "s3://1000genomes/1000G_2504_high_coverage/data/"
-    #"s3://layerlabcu/sra/chicken/"
+    #"s3://1000genomes/1000G_2504_high_coverage/data/"
+    "s3://layerlabcu/sra/pig/"
+homedir:
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/chicken"
 refdir:
-    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/data/human/ref"
-    #"/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/data/ref/"
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/chicken/ref"
 outdir:
-    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/human/data"
-    #"/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/data/ref/"
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/chicken/data"
 s3_bam_bucket:
-    "1000genomes/1000G_2504_high_coverage/data/"
-    #"layerlabcu/sra/chicken/"
+    #"1000genomes/1000G_2504_high_coverage/data/"
+    "layerlabcu/sra/pig/"
 s3_ref_loc:
-    "layerlabcu/ref/genomes/GRCh38_full_analysis_set_plus_decoy_hla/GRCh38_full_analysis_set_plus_decoy_hla.fa"
+    "layerlabcu/ref/genomes/pig/GCF_000003025.6_Sscrofa11.1_genomic.fa"
 file_type:
-    "cram"
+    "bam"
 file_index:
-    "crai"
+    "bai"
 read_from_file:
-    True
+    False
 file_name:
     "/scratch/Shares/layer/workspace/devin_sra/sv_step/human_cram.txt"
+
+
+ref_url:
+   "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/002/315/GCA_000002315.5_GRCg6a/GCA_000002315.5_GRCg6a_genomic.fna.gz"
+organism_name:
+   "chicken"
+sra_file:
+   True
+
