@@ -30,4 +30,7 @@ organism_name:
    "chicken"
 sra_file:
    True
-
+bwa_err_log:
+   "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_pipe/src/bwa_errors"
+cores:
+   12
