@@ -2,16 +2,24 @@ s3:
     True
 s3_bucket:
     #"s3://1000genomes/1000G_2504_high_coverage/data/"
-    "s3://layerlabcu/sra/pig/"
+
+    "s3://layerlabcu/sra/chicken/"
+    #"s3://layerlabcu/sra/horse/"
+dir:
+        "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/"
 homedir:
-    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/pig"
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/chicken"
+    #"/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/horse"
 refdir:
-    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/pig/ref"
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/chicken/old_ref"
+    #"/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/horse/ref"
 outdir:
-    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/pig/clean_data"
+    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/chicken/data"
+    #"/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_results/horse/data"
 s3_bam_bucket:
     #"1000genomes/1000G_2504_high_coverage/data/"
-    "layerlabcu/sra/pig/"
+    "layerlabcu/sra/chicken/"
+    #"layerlabcu/sra/horse/"
 s3_ref_loc:
     "layerlabcu/ref/genomes/pig/GCF_000003025.6_Sscrofa11.1_genomic.fa"
 file_type:
@@ -27,10 +35,11 @@ file_name:
 ref_url:
    "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/002/315/GCA_000002315.5_GRCg6a/GCA_000002315.5_GRCg6a_genomic.fna.gz"
 organism_name:
-   "pig"
+   "chicken"
+   #"horse"
 sra_file:
    True
 bwa_err_log:
    "/scratch/Shares/layer/workspace/devin_sra/sv_step/sv_pipe/src/bwa_errors"
 cores:
-   16
+   63
